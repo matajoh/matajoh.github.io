@@ -1,0 +1,32 @@
+﻿<!DOCTYPE html>
+
+<html>
+<head>
+    <title>Convolution Example</title>
+</head>
+<body>
+    <div id="holder"></div>
+
+    <script src="lib/raphael/raphael.js"></script>
+    <script src="js/viewer.js"></script>
+    <script type="text/javascript" charset="utf-8">
+        /// <reference path="../Typescript/viewer.ts" />
+        window.onload = function () {
+            var r = Raphael("holder", 492, 142);
+
+            with (Viewer) {
+                var input = new Image(1, 32, 32);
+                var c1 = new Convolutional(6, 32, 32, 5);
+                var s2 = new Convolutional(6, 28, 28, 2, 2, Transition.Sigmoid);
+                var c3 = new Convolutional(16, 14, 14, 5);
+                var s4 = new Convolutional(16, 10, 10, 2, 2, Transition.Sigmoid);
+                var fc5 = new FullyConnected(120);
+                var fc6 = new FullyConnected(84, Transition.Sigmoid);
+                var fc7 = new FullyConnected(10);
+
+                var diagram = new LayerDiagram(6, 1, 480, 140, r, input, c1, s2, c3, s4, fc5, fc6, fc7);
+            }
+        };
+    </script>
+</body>
+</html>

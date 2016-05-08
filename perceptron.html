@@ -1,0 +1,141 @@
+﻿<!DOCTYPE html>
+
+<html>
+<head>
+    <title>Perceptron</title>
+</head>
+<body>
+    <div id="holder"></div>
+
+    <script src="lib/jquery/dist/jquery.min.js"></script>
+    <script src="/lib/raphael/raphael.js"></script>
+    <script src="/js/nn.js"></script>
+    <script type="text/javascript" charset="utf-8">
+        /// <reference path="../Typescript/nn.ts" />
+        window.onload = function () {
+            var r = Raphael("holder", 280, 531);
+
+            with(NeuralNets){
+                var net = new Net(r);
+
+                var grid = new Grid(76, 6, 128, 128, 16, 16, r);
+                var points = [];
+                points.push(grid.addPosPoint(-0.02, 0.14));
+                points.push(grid.addPosPoint(-0.5, 0.2));
+                points.push(grid.addPosPoint(-0.1, -0.42));
+                points.push(grid.addPosPoint(0.23, -0.32));
+                points.push(grid.addPosPoint(-0.43, -0.22));
+                points.push(grid.addPosPoint(0.63, -0.72));
+                points.push(grid.addPosPoint(-0.15, 0.24));
+
+                points.push(grid.addNegPoint(-0.71, 0.57));
+                points.push(grid.addNegPoint(0.1, 0.62));
+                points.push(grid.addNegPoint(-0.33, 0.71));
+                points.push(grid.addNegPoint(0.55, 0.13));
+                points.push(grid.addNegPoint(0.64, 0.81));
+                points.push(grid.addNegPoint(0.91, 0.37));
+                points.push(grid.addNegPoint(-0.8, -.3));
+
+                var inputX = net.addInput(36, 150, 53, 1, "x");
+                var inputY = net.addInput(147, 150, 53, 1, "y");
+                var b0 = net.addBias(108, 182, 21, "b")
+
+                var n = net.addLinear(87.5, 248, 31, "n");
+                var wx = net.addWeight(inputX, n, "wx");
+                var wy = net.addWeight(inputY, n, "wy");
+                var wb = net.addWeight(b0, n, "wb");
+                var s = net.addStep(n, 10, "s0");
+
+                var perceptron = net.setPerceptron(66, 350, 105, 52);
+                perceptron.addInput(s);
+
+                var slider = weightSlider();
+
+                function getWeight(max){
+                    return 2*max*Math.random() - max;                
+                }
+
+                function weightSlider() {
+                    var groove = r.rect(260, 171, 4, 220).attr({fill: "#bbb", stroke: "none"});
+                    var grooveBB = groove.getBBox();
+
+                    var slider = r.circle(262, grooveBB.y + 0.5*grooveBB.height, 11).attr({ fill: "#00f" });
+
+                    var maxY = grooveBB.y + grooveBB.height;
+                    var minY = grooveBB.y;
+
+                    function move(dx, dy) {
+                        var diff = dy - (this.dy || 0);
+                        var Y = this.attr("cy") + diff;
+                        if (Y > maxY) {
+                            Y = maxY;
+                        }
+
+                        if (Y < minY) {
+                            Y = minY;
+                        }
+
+                        this.attr({ cy: Y });
+                        this.dy = dy;
+
+                        var percent = (grooveBB.y + grooveBB.height - Y) / grooveBB.height;
+                        var color = getColor(percent);
+                        slider.attr({ fill: color });
+                        if (this.selectedElements) {
+                            this.selectedElements[0].setPercent(percent);
+                            if(this.selectedElements[1]){
+                                this.selectedElements[1].attr("fill", color);
+                            }
+
+                            net.forward(true);
+                        }
+                    }
+
+                    function up() {
+                        this.dy = 0;
+                        grid.classify(net);
+                    }
+
+                    slider.select = function (elements) {
+                        this.selectedElements = elements;
+                        var percent = elements[0].getPercent();
+                        Y = grooveBB.y + grooveBB.height - (percent * grooveBB.height);
+                        slider.attr({ cy: Y });
+                        slider.attr({ fill: getColor(percent) });
+                    }
+
+                    slider.drag(move, up, up);
+
+                    slider.selectedElements = 0;
+
+                    return slider;
+                }
+
+                var onClick = function(){
+                    console.log(this.name);
+                    slider.select(this);
+                };
+
+                inputX.click($.proxy(onClick, [inputX]));
+                inputY.click($.proxy(onClick, [inputY]));
+                wx.shape[0].attr("stroke-width", 8);
+                wx.click($.proxy(onClick, [wx]));
+                wy.shape[0].attr("stroke-width", 8);
+                wy.click($.proxy(onClick, [wy]));
+                wb.shape[0].attr("stroke-width", 8);
+                wb.click($.proxy(onClick, [wb]));
+
+                var pointClick = function(){
+                    net.forward(true, [this.x, this.y]);
+                }
+
+                for(var i in points){
+                    points[i].shape.click($.proxy(pointClick), points[i]);
+                }
+
+                grid.classify(net);
+            }
+        };
+    </script>
+</body>
+</html>

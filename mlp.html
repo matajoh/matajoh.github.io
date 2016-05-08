@@ -1,0 +1,254 @@
+﻿<!DOCTYPE html>
+
+<html>
+<head>
+    <title>Multi-layer Perceptron</title>
+</head>
+<body>
+    <div id="holder"></div>
+
+    <script src="lib/jquery/dist/jquery.min.js"></script>
+    <script src="/lib/raphael/raphael.js"></script>
+    <script src="/js/nn.js"></script>
+    <script type="text/javascript" charset="utf-8">
+        /// <reference path="../Typescript/nn.ts" />
+        window.onload = function () {
+            var r = Raphael("holder", 280, 531);
+            // r.rect(0, 0, 300, 531);             
+
+            with(NeuralNets){
+                var net = new Net(r);               
+
+                var grid = new Grid(76, 6, 128, 128, 16, 16, r);
+                var points = [];
+                points.push(grid.addPosPoint(-0.02, 0.14));
+                points.push(grid.addPosPoint(-0.5, 0.2));
+                points.push(grid.addPosPoint(-0.1, -0.42));
+                points.push(grid.addPosPoint(0.23, -0.32));
+                points.push(grid.addPosPoint(-0.43, -0.22));
+                points.push(grid.addPosPoint(0.63, -0.72));
+                points.push(grid.addPosPoint(-0.15, 0.24));
+
+                points.push(grid.addNegPoint(-0.71, 0.57));
+                points.push(grid.addNegPoint(0.1, 0.62));
+                points.push(grid.addNegPoint(-0.33, 0.71));
+                points.push(grid.addNegPoint(0.55, 0.13));
+                points.push(grid.addNegPoint(0.64, 0.81));
+                points.push(grid.addNegPoint(0.91, 0.37));
+                points.push(grid.addNegPoint(-0.8, -.3));
+
+                var inputX = net.addInput(47, 150, 43, 1, "x");
+                var inputY = net.addInput(108, 150, 43, 1, "y");
+                var b0 = net.addBias(169, 172.5, 21, "b")
+
+                var n0 = net.addLinear(1.5, 238, 26.5, "0");
+                var w0x = net.addWeight(inputX, n0, "w0x");
+                var w0y = net.addWeight(inputY, n0, "w0y");
+                var w0b = net.addWeight(b0, n0, "w0b");
+                var s0 = net.addSigmoid(n0, 10, "s0");
+
+                var n1 = net.addLinear(72.5, 238, 26.5, "1");
+                var w1x = net.addWeight(inputX, n1, "w1x");
+                var w1y = net.addWeight(inputY, n1, "w1y");
+                var w1b = net.addWeight(b0, n1, "w1b");
+                var s1 = net.addSigmoid(n1, 10, "s1");
+
+                var n2 = net.addLinear(143.5, 238, 26.5, "2");
+                var w2x = net.addWeight(inputX, n2, "w2x");
+                var w2y = net.addWeight(inputY, n2, "w2y");
+                var w2b = net.addWeight(b0, n2, "w2b");
+                var s2 = net.addSigmoid(n2, 10, "s2");
+
+                var b1 = net.addBias(214.5, 290, 21, "b");
+
+                var n3 = net.addLinear(56.5, 355, 26.5,  "3");
+                var w30 = net.addWeight(s0, n3, "w30");
+                var w31 = net.addWeight(s1, n3, "w31");
+                var w32 = net.addWeight(s2, n3, "w32");
+                var w3b = net.addWeight(b1, n3, "w3b");
+
+
+                var n4 = net.addLinear(127.5, 355, 26.5,  "4");
+                var w40 = net.addWeight(s0, n4, "w40");
+                var w41 = net.addWeight(s1, n4, "w41");
+                var w41 = net.addWeight(s2, n4, "w42");
+                var w4b = net.addWeight(b1, n4, "w4b");
+
+                var softmax = net.setSoftMax(66, 428, 105, 52);
+                softmax.addInput(n2);
+                softmax.addInput(n3);
+
+                var slider = weightSlider();
+                backpropPlayer();
+
+                function getWeight(max){
+                    return 2*max*Math.random() - max;                
+                }
+
+                function weightSlider() {
+                    var groove = r.rect(260, 171, 4, 308).attr({fill: "#bbb", stroke: "none"});
+                    var grooveBB = groove.getBBox();
+
+                    var slider = r.circle(262, grooveBB.y + 0.5*grooveBB.height, 11).attr({ fill: "#00f" });
+
+                    var maxY = grooveBB.y + grooveBB.height;
+                    var minY = grooveBB.y;
+
+                    function move(dx, dy) {
+                        var diff = dy - (this.dy || 0);
+                        var Y = this.attr("cy") + diff;
+                        if (Y > maxY) {
+                            Y = maxY;
+                        }
+
+                        if (Y < minY) {
+                            Y = minY;
+                        }
+
+                        this.attr({ cy: Y });
+                        this.dy = dy;
+
+                        var percent = (grooveBB.y + grooveBB.height - Y) / grooveBB.height;
+                        var color = getColor(percent);
+                        slider.attr({ fill: color });
+                        if (this.selectedElements) {
+                            this.selectedElements[0].setPercent(percent);
+                            if(this.selectedElements[1]){
+                                this.selectedElements[1].attr("fill", color);                            
+                            }
+                            
+                            net.forward(true);
+                        }
+                    }
+
+                    function up() {
+                        this.dy = 0;
+                        grid.classify(net);
+                    }
+
+                    slider.select = function (elements) {
+                        this.selectedElements = elements;
+                        var percent = elements[0].getPercent();
+                        Y = grooveBB.y + grooveBB.height - (percent * grooveBB.height);
+                        slider.attr({ cy: Y });
+                        slider.attr({ fill: getColor(percent) });
+                    }
+
+                    slider.drag(move, up, up);
+
+                    slider.selectedElements = 0;
+
+                    return slider;
+                }
+
+                function backpropPlayer() {
+                    var MAX_ITER = 1000;
+                    var iteration = 0;
+                    var isPlaying = false;
+                    var player = r.rect(220, 110, 60, 25, 3).attr({ "fill": "#0d7fd9", "stroke": "none"});
+                    var button = r.rect(221, 111, 23, 23).attr({ "stroke": "none", "fill": "#0d7fd9" });
+                    var play = r.path("M230,118.5L237,122.5L230,126.5Z").attr({ "stroke": "#fff", "fill": "none" });
+                    var pause = r.path("M232,118.5V126.5M235,118.5V126.5").attr({ "stroke": "#fff", "fill": "none" });
+                    pause.hide();
+                    var iterationText = r.text(262.5, 122.5, "0").attr({ "fill": "#fff" });
+                    var inside = false;
+                    var pressed = false;
+
+                    function updateButton() {
+                        if (isPlaying) {
+                            pause.show();
+                            play.hide();
+                        } else {
+                            pause.hide();
+                            play.show();
+                        }
+                    }
+
+                    function updatePath(){
+                        if(pressed){
+                            play.attr({ "stroke": "#aaa" });
+                            pause.attr({ "stroke": "#aaa" });
+                        }else if(inside){
+                            play.attr({ "stroke": "#ccc" });
+                            pause.attr({ "stroke": "#ccc" });
+                        }else{
+                            play.attr({ "stroke": "#fff" });
+                            pause.attr({ "stroke": "#fff" });
+                        }
+                    }
+
+                    function train() {
+                        grid.presentBatch(net);
+                        grid.classify(net);
+                        iteration++;
+                        iterationText.attr("text", iteration.toString());
+
+                        if (iteration < MAX_ITER) {
+                            if (isPlaying) {
+                                setTimeout(train, 100);
+                            } else {
+                                isPlaying = false;
+                                updateButton();
+                            }
+                        }
+                    }
+
+                    var button = [button, play, pause];
+
+                    for(var i in button){                       
+                        button[i].mouseover(function () {
+                            inside = true;
+                            updatePath();
+                        });
+
+                        button[i].mouseout(function () {
+                            inside = false;
+                            updatePath();
+                        });
+
+                        button[i].mousedown(function () {
+                            pressed = true;
+                            updatePath();
+                        });
+
+
+                        button[i].click(function () {
+                            if (isPlaying) {
+                                isPlaying = false;
+                                updateButton()
+                            } else if (iteration < MAX_ITER) {
+                                isPlaying = true;
+                                train();
+                                updateButton();
+                            }
+                        });
+                    }
+
+                    $("#holder").mouseup(function () {
+                        pressed = false;
+                        updatePath();
+                    });                    
+                }
+
+                var onClick = function(){
+                    slider.select(this);
+                };
+                
+
+                inputX.click($.proxy(onClick, [inputX]));
+                inputY.click($.proxy(onClick, [inputY]));
+                
+                var pointClick = function(){
+                    net.forward(true, [this.x, this.y]);
+                }
+
+                for(var i in points){
+                    points[i].shape.click($.proxy(pointClick), points[i]);                
+                }
+
+                grid.classify(net);
+            }
+        };
+    </script>
+</body>
+</html>
