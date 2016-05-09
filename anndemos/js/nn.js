@@ -84,7 +84,11 @@ var NeuralNets;
     function artanh(x) {
         return 0.5 * Math.log((1 + x) / (1 - x));
     }
-    function concat(objects) {
+    function concat() {
+        var objects = [];
+        for (var _i = 0; _i < arguments.length; _i++) {
+            objects[_i - 0] = arguments[_i];
+        }
         var result = "";
         for (var i in objects) {
             result = result + objects[i];
@@ -94,20 +98,7 @@ var NeuralNets;
     function cross(x, y, width, thickness) {
         width = width / 2;
         thickness = thickness / 2;
-        return concat([
-            "M", x - width, ",", y - thickness,
-            "H", x - thickness,
-            "V", y - width,
-            "H", x + thickness,
-            "V", y - thickness,
-            "H", x + width,
-            "V", y + thickness,
-            "H", x + thickness,
-            "V", y + width,
-            "H", x - thickness,
-            "V", y + thickness,
-            "H", x - width,
-            "Z"]);
+        return concat("M", x - width, ",", y - thickness, "H", x - thickness, "V", y - width, "H", x + thickness, "V", y - thickness, "H", x + width, "V", y + thickness, "H", x + thickness, "V", y + width, "H", x - thickness, "V", y + thickness, "H", x - width, "Z");
     }
     var Converter = (function () {
         function Converter(min, max) {
@@ -313,7 +304,7 @@ var NeuralNets;
             this.input = input;
             this.computeFlag = false;
             this.converter = new Converter(-1, 1);
-            var path = concat(["M", x1, ",", y1, "L", x2, ",", y2]);
+            var path = concat("M", x1, ",", y1, "L", x2, ",", y2);
             this.shape = [];
             this.shape.push(raphael.path(path).attr({ "stroke-width": 4, "stroke": NeuralNets.getColor(this.converter.toPercent(tanh(weightValue))) }).toBack());
             output.addInput(this);
@@ -392,23 +383,7 @@ var NeuralNets;
             this.converter = new Converter(0, 1);
             var pathX = Math.cos(Sigmoid.ANGLE) * radius * 0.8;
             var pathY = Math.sin(Sigmoid.ANGLE) * radius * 0.8;
-            var path = concat([
-                "M",
-                centerX - pathX,
-                ",",
-                centerY + pathY,
-                "C",
-                centerX + pathX,
-                ",",
-                centerY + pathY,
-                ",",
-                centerX - pathX,
-                ",",
-                centerY - pathY,
-                ",",
-                centerX + pathX,
-                ",",
-                centerY - pathY]);
+            var path = concat("M", centerX - pathX, ",", centerY + pathY, "C", centerX + pathX, ",", centerY + pathY, ",", centerX - pathX, ",", centerY - pathY, ",", centerX + pathX, ",", centerY - pathY);
             this.shape.push(raphael.path(path).attr({ "stroke": "#fff", "stroke-width": 2 }));
         }
         Sigmoid.prototype.click = function (handler) {
@@ -488,17 +463,7 @@ var NeuralNets;
             this.converter = new Converter(-1, 1);
             var pathX = Math.cos(Sigmoid.ANGLE) * radius * 0.8;
             var pathY = Math.sin(Sigmoid.ANGLE) * radius * 0.8;
-            var path = concat([
-                "M",
-                centerX - pathX,
-                ",",
-                centerY + pathY,
-                "H",
-                centerX,
-                "V",
-                centerY - pathY,
-                "H",
-                centerX + pathX]);
+            var path = concat("M", centerX - pathX, ",", centerY + pathY, "H", centerX, "V", centerY - pathY, "H", centerX + pathX);
             this.shape.push(raphael.path(path).attr({ "stroke": "#fff", "stroke-width": 2 }));
         }
         Step.prototype.compute = function (display) {
@@ -602,12 +567,13 @@ var NeuralNets;
         return Point;
     }());
     var Grid = (function () {
-        function Grid(x, y, width, height, rows, columns, raphael) {
+        function Grid(x, y, width, height, rows, columns, net, raphael) {
             this.x = x;
             this.y = y;
             this.height = height;
             this.rows = rows;
             this.columns = columns;
+            this.net = net;
             this.raphael = raphael;
             this.cells = [];
             this.posPoints = [];
@@ -626,50 +592,58 @@ var NeuralNets;
             }
         }
         Grid.prototype.addPosPoint = function (x, y) {
+            var _this = this;
             var xx = (x + 1) * this.scaleX + this.x;
             var yy = (this.height - ((y + 1) * this.scaleY)) + this.y;
             var shape = this.raphael.path(cross(xx, yy, 8, 2)).attr({ "fill": "#000", "stroke": "#fff" });
             var point = new Point(x, y, shape);
             this.posPoints.push(point);
+            shape.click(function () {
+                _this.net.forward(true, [x, y]);
+            });
             return point;
         };
         Grid.prototype.addNegPoint = function (x, y) {
+            var _this = this;
             var xx = (x + 1) * this.scaleX + this.x;
             var yy = (this.height - ((y + 1) * this.scaleY)) + this.y;
             var shape = this.raphael.circle(xx, yy, 4).attr({ "fill": "#000", "stroke": "#fff" });
             var point = new Point(x, y, shape);
             this.negPoints.push(point);
+            shape.click(function () {
+                _this.net.forward(true, [x, y]);
+            });
             return point;
         };
-        Grid.prototype.presentBatch = function (net) {
+        Grid.prototype.presentBatch = function () {
             var i = 0;
             var originalValues = [];
-            for (i = 0; i < net.inputs.length; i++) {
-                originalValues[i] = net.inputs[i].value;
+            for (i = 0; i < this.net.inputs.length; i++) {
+                originalValues[i] = this.net.inputs[i].value;
             }
             for (var i_1 = 0; i_1 < this.posPoints.length; i_1++) {
                 var input = this.posPoints[i_1];
-                net.present(false, 1, [input.x, input.y]);
+                this.net.present(false, 1, [input.x, input.y]);
             }
             for (var i_2 = 0; i_2 < this.negPoints.length; i_2++) {
                 var input = this.negPoints[i_2];
-                net.present(false, 0, [input.x, input.y]);
+                this.net.present(false, 0, [input.x, input.y]);
             }
-            net.update(1.0 / (this.posPoints.length + this.negPoints.length));
-            net.forward(true, originalValues);
+            this.net.update(1.0 / (this.posPoints.length + this.negPoints.length));
+            this.net.forward(true, originalValues);
         };
-        Grid.prototype.classify = function (net) {
+        Grid.prototype.classify = function () {
             var i = 0;
             var originalValues = [];
-            for (i = 0; i < net.inputs.length; i++) {
-                originalValues[i] = net.inputs[i].value;
+            for (i = 0; i < this.net.inputs.length; i++) {
+                originalValues[i] = this.net.inputs[i].value;
             }
             var values = [];
             for (var r = 0, i_3 = 0; r < this.rows; r++) {
                 values[1] = 1 - (r + 0.5) * this.rowScale;
                 for (var c = 0; c < this.columns; c++, i_3++) {
                     values[0] = (c + 0.5) * this.columnScale - 1;
-                    var result = net.forward(false, values);
+                    var result = this.net.forward(false, values);
                     if (result[0] > result[1]) {
                         this.cells[i_3].attr("fill", "#555");
                     }
@@ -680,7 +654,7 @@ var NeuralNets;
             }
             for (var i_4 = 0; i_4 < this.posPoints.length; i_4++) {
                 var input = this.posPoints[i_4];
-                var result = net.forward(false, [input.x, input.y]);
+                var result = this.net.forward(false, [input.x, input.y]);
                 if (result[0] > result[1]) {
                     input.shape.attr("stroke", "#f00");
                 }
@@ -690,7 +664,7 @@ var NeuralNets;
             }
             for (var i_5 = 0; i_5 < this.negPoints.length; i_5++) {
                 var input = this.negPoints[i_5];
-                var result = net.forward(false, [input.x, input.y]);
+                var result = this.net.forward(false, [input.x, input.y]);
                 if (result[1] > result[0]) {
                     input.shape.attr("stroke", "#f00");
                 }
@@ -698,10 +672,157 @@ var NeuralNets;
                     input.shape.attr("stroke", "none");
                 }
             }
-            net.forward(true, originalValues);
+            this.net.forward(true, originalValues);
         };
         return Grid;
     }());
     NeuralNets.Grid = Grid;
+    var Slider = (function () {
+        function Slider(x, y, height, net, grid, raphael) {
+            var _this = this;
+            this.x = x;
+            this.y = y;
+            this.height = height;
+            this.net = net;
+            this.grid = grid;
+            var groove = raphael.rect(x - 2, y, 4, height).attr({ fill: "#bbb", stroke: "none" });
+            this.bottom = y + height;
+            this.shape = raphael.circle(x, y + 0.5 * height, 11).attr({ fill: "#00f" });
+            this.shape.drag(function (dx, dy, x, y, event) { return _this.move(dx, dy); }, function (x, y, event) { return _this.start(); }, function (event) { return _this.end(); });
+        }
+        Slider.prototype.register = function (element) {
+            var _this = this;
+            element.click(function () {
+                _this.select(element);
+            });
+        };
+        Slider.prototype.move = function (dx, dy) {
+            dy = 0.5 * dy;
+            var diff = dy - (this.dy || 0);
+            var cy = this.shape.attr("cy") + diff;
+            if (cy > this.bottom) {
+                cy = this.bottom;
+            }
+            if (cy < this.y) {
+                cy = this.y;
+            }
+            this.shape.attr({ cy: cy });
+            this.dy = dy;
+            var percent = (this.bottom - cy) / this.height;
+            var color = getColor(percent);
+            this.shape.attr({ fill: color });
+            if (this.selectedElement) {
+                this.selectedElement.setPercent(percent);
+                this.net.forward(true);
+            }
+        };
+        Slider.prototype.start = function () {
+            this.dy = 0;
+            this.grid.classify();
+        };
+        Slider.prototype.end = function () {
+            this.dy = 0;
+            this.grid.classify();
+        };
+        Slider.prototype.select = function (element) {
+            this.selectedElement = element;
+            var percent = element.getPercent();
+            var y = this.bottom - (percent * this.height);
+            this.shape.attr({ cy: y });
+            this.shape.attr({ fill: getColor(percent) });
+        };
+        return Slider;
+    }());
+    NeuralNets.Slider = Slider;
+    var BackpropPlayer = (function () {
+        function BackpropPlayer(x, y, grid, holder, raphael) {
+            var _this = this;
+            this.grid = grid;
+            this.iteration = 0;
+            this.isPlaying = false;
+            var player = raphael.rect(x, y, 60, 25, 3).attr({ "fill": "#0d7fd9", "stroke": "none" });
+            var button = raphael.rect(x + 1, y + 1, 23, 23).attr({ "stroke": "none", "fill": "#0d7fd9" });
+            this.play = raphael.path(concat("M", x + 10, ",", y + 8.5, "L", x + 17, ",", y + 12.5, "L", x + 10, ",", y + 16.5, "Z")).attr({ "stroke": "#fff", "fill": "none" });
+            this.pause = raphael.path(concat("M", x + 12, ",", y + 8.5, "V", y + 16.5, "M", x + 15, ",", y + 8.5, "V", y + 16.5)).attr({ "stroke": "#fff", "fill": "none" });
+            this.pause.hide();
+            this.iterationText = raphael.text(x + 42.5, y + 12.5, "0").attr({ "fill": "#fff" });
+            this.inside = false;
+            this.pressed = false;
+            var elements = [button, this.play, this.pause];
+            for (var i = 0; i < elements.length; i++) {
+                var element = elements[i];
+                element.mouseover(function () {
+                    _this.inside = true;
+                    _this.updatePath();
+                });
+                element.mouseout(function () {
+                    _this.inside = false;
+                    _this.updatePath();
+                });
+                element.mousedown(function () {
+                    _this.pressed = true;
+                    _this.updatePath();
+                });
+                element.click(function () {
+                    if (_this.isPlaying) {
+                        _this.isPlaying = false;
+                        _this.updateButton();
+                    }
+                    else if (_this.iteration < BackpropPlayer.MAX_ITER) {
+                        _this.isPlaying = true;
+                        _this.train();
+                        _this.updateButton();
+                    }
+                });
+            }
+            holder.onmouseup = function (ev) {
+                _this.pressed = false;
+                _this.updatePath();
+            };
+        }
+        BackpropPlayer.prototype.updateButton = function () {
+            if (this.isPlaying) {
+                this.pause.show();
+                this.play.hide();
+            }
+            else {
+                this.pause.hide();
+                this.play.show();
+            }
+        };
+        BackpropPlayer.prototype.updatePath = function () {
+            if (this.pressed) {
+                this.play.attr({ "stroke": "#aaa" });
+                this.pause.attr({ "stroke": "#aaa" });
+            }
+            else if (this.inside) {
+                this.play.attr({ "stroke": "#ccc" });
+                this.pause.attr({ "stroke": "#ccc" });
+            }
+            else {
+                this.play.attr({ "stroke": "#fff" });
+                this.pause.attr({ "stroke": "#fff" });
+            }
+        };
+        BackpropPlayer.prototype.train = function () {
+            var _this = this;
+            this.grid.presentBatch();
+            this.grid.classify();
+            this.iteration++;
+            this.iterationText.attr("text", this.iteration.toString());
+            if (this.iteration < BackpropPlayer.MAX_ITER) {
+                if (this.isPlaying) {
+                    setTimeout(function () { return _this.train(); }, 100);
+                }
+                else {
+                    this.isPlaying = false;
+                    this.updateButton();
+                }
+            }
+        };
+        BackpropPlayer.MAX_ITER = 1000;
+        return BackpropPlayer;
+    }());
+    NeuralNets.BackpropPlayer = BackpropPlayer;
 })(NeuralNets || (NeuralNets = {}));
 //# sourceMappingURL=nn.js.map

@@ -1,13 +1,50 @@
 ﻿<!DOCTYPE html>
 
-<html>
+<html lang="en">
 <head>
-    <title>Demos</title>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>Artificial Neural Net Demos</title>
+
+    <link rel="stylesheet" href="./lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="./css/site.css" />
 </head>
 <body>
-    <a href="perceptron.html">Perceptron</a>
-    <a href="mlp.html">MLP</a>
-    <a href="simple.html">Simple</a>
-    <a href="lenet.html">LeNet-5</a>
+    <div class="container">
+        <div class="jumbotron">
+            <h1>Welcome!</h1>
+            <p>On this site you will find some useful demos to aid in your understanding of how artificial neural nets work.</p>
+            <p>Each of the demos is designed to run in portrait mode, and is touch-enabled. To return to this page, simply use the back button on your browser.</p>
+        </div>
+        
+        <div class="row">
+            <div class="col-md-12">
+                <div class="list-group">
+                    <a href="perceptron.html" class="list-group-item">
+                        <h4 class="list-group-item-heading">Perceptron</h4>
+                        <p class="list-group-item-text">Modify the weights of a perceptron and see how it changes the behavior of the network in classifying points in a 2D plane.</p>
+                    </a>
+                    <a href="mlp.html" class="list-group-item">
+                        <h4 class="list-group-item-heading">Multi-Layer Perceptron</h4>
+                        <p class="list-group-item-text">Watch backpropagation in action as a multi-layer perceptron learns how to classify points in a 2D plane.</p>
+                    </a>
+                    <a href="simple.html" class="list-group-item">
+                        <h4 class="list-group-item-heading">Simple Fully-Connected Network</h4>
+                        <p class="list-group-item-text">Inspect the inner workings of a simple fully-connected MLP that has been trained on the MNIST dataset.</p>
+                    </a>
+                    <a href="lenet.html" class="list-group-item">
+                        <h4 class="list-group-item-heading">LeNet-5</h4>
+                        <p class="list-group-item-text">Inspect a version of the famous LeNet-5, visualizing its learned parameters and outputs on sample images from MNIST.</p>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+   
+    <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
+    <script src="./lib/jquery/dist/jquery.min.js"></script>
+    <!-- Include all compiled plugins (below), or include individual files as needed -->
+    <script src="./lib/bootstrap/dist/js/bootstrap.min.js"></script>
 </body>
 </html>
