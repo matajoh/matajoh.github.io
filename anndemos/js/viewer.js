@@ -67,17 +67,21 @@ var Viewer;
             var nodeSize = height / LayerDiagram.MAX_NODES;
             var layerWidth = nodeSize / LayerDiagram.NODE_SIZE_SCALE;
             var transitionWidth = (width - (layerWidth * this.layers.length)) / (this.layers.length - 1);
+            var transitionHeight = 0.5 * layerWidth;
             for (var i = 0; i < this.layers.length; i++) {
                 var layerHeight = heightScale * Math.log(this.layers[i].output);
-                this.layers[i].layout(x, y + 0.5 * (height - layerHeight), layerWidth, layerHeight, i, raphael);
+                var layer = this.layers[i];
+                layer.layout(x, y + 0.5 * (height - layerHeight), layerWidth, layerHeight, i, raphael);
                 x += layerWidth;
                 if (i < this.layers.length - 1) {
                     if (this.layers[i].transition == Transition.Sigmoid) {
-                        this.layoutSigmoid(x, y + 0.5 * (height - 0.5 * layerWidth), transitionWidth, 0.5 * layerWidth);
+                        this.layoutSigmoid(x, y + 0.5 * (height - transitionHeight), transitionWidth, transitionHeight);
                     }
                     else {
-                        this.layoutLinear(x, y + 0.5 * (height - 0.5 * layerWidth), transitionWidth, 0.5 * layerWidth);
+                        this.layoutLinear(x, y + 0.5 * (height - transitionHeight), transitionWidth, transitionHeight);
                     }
+                    layer.thumbnail = raphael.image("", x + 0.5 * transitionWidth - 8, y + 0.5 * (height + 2.5 * transitionHeight), 16, 16);
+                    layer.thumbnail.hide();
                     x += transitionWidth;
                 }
             }
@@ -124,9 +128,11 @@ var Viewer;
             var self = this;
             var _loop_3 = function(i) {
                 var layer = this_1.layers[i];
-                layer.thumbnail.click(function () {
-                    self.setPreview(layer.thumbnail.attr('src'), previewX, previewY, width, previewHeight);
-                });
+                if (layer.thumbnail) {
+                    layer.thumbnail.click(function () {
+                        self.setPreview(layer.thumbnail.attr('src'), previewX, previewY, width, previewHeight);
+                    });
+                }
                 layer.click(function () {
                     self.setPreview(layerWeightSrc[i], previewX, previewY, width, previewHeight);
                 });
@@ -275,12 +281,12 @@ var Viewer;
         }
         Layer.prototype.layout = function (x, y, width, height, index, raphael) {
             this.shape.push(raphael.rect(x, y, width, height).attr({ 'fill': '#e1e1e1', 'stroke': '#7f7f7f' }));
-            this.thumbnail = raphael.image("", x + width + 2, y + 0.75 * height, 16, 16);
-            this.thumbnail.hide();
         };
         Layer.prototype.setThumbnail = function (src) {
-            this.thumbnail.attr('src', src);
-            this.thumbnail.show();
+            if (this.thumbnail) {
+                this.thumbnail.attr('src', src);
+                this.thumbnail.show();
+            }
         };
         Layer.prototype.click = function (handler) {
             for (var i = 0; i < this.shape.length; i++) {
