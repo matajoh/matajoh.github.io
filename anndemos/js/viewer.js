@@ -227,13 +227,13 @@ var Viewer;
         return result;
     }
     function attachTop(raphael, middle, top, text) {
-        var element = raphael.text(0, 0, text).attr({ "font-size": 8, 'fill': '#6868b6' });
+        var element = raphael.text(0, 0, text).attr({ "font-size": 6, 'fill': '#6868b6' });
         var bbox = element.getBBox();
         element.attr({ x: middle, y: top - 0.5 * bbox.height });
         return element;
     }
     function attachBottom(raphael, middle, bottom, text) {
-        var element = raphael.text(0, 0, text).attr({ "font-size": 8, 'fill': '#6868b6' });
+        var element = raphael.text(0, 0, text).attr({ "font-size": 6, 'fill': '#6868b6' });
         var bbox = element.getBBox();
         element.attr({ x: middle, y: bottom + 0.7 * bbox.height });
         return element;
@@ -393,7 +393,7 @@ var Viewer;
         }
         Convolutional.prototype.layout = function (x, y, width, height, index, raphael) {
             _super.prototype.layout.call(this, x, y, width, height, index, raphael);
-            this.shape.push(raphael.rect(x, y, width, height, 4));
+            this.shape[0].attr('r', 4);
             var nodeSize = width * LayerDiagram.NODE_SIZE_SCALE;
             var nodeWidth = 0.7 * nodeSize;
             var displayCount = Math.floor(height / nodeSize);

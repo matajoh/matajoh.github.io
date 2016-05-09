@@ -1,8 +1,10 @@
 ﻿<!DOCTYPE html>
 
-<html>
+<html lang="en">
 <head>
     <title>Multi-layer Perceptron</title>
+
+    <link rel="stylesheet" href="./css/site.css" />
 </head>
 <body>
     <div id="holder"></div>
@@ -14,7 +16,12 @@
         /// <reference path="../Typescript/nn.ts" />
         window.onload = function () {
             var r = Raphael("holder", 280, 531);
-            // r.rect(0, 0, 300, 531);             
+
+            r.setViewBox(0, 0, 280, 531, true);
+
+            var svg = document.querySelector("svg");
+            svg.removeAttribute("width");
+            svg.removeAttribute("height");
 
             with(NeuralNets){
                 var net = new Net(r);               
