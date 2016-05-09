@@ -8,11 +8,5 @@ body, html{
 
 body.app {
     width: 560px;
-    height: 1062px;
-    margin: auto;
-}
-
-#holder{
-    height: 100%;
-    width: 100%;
+    margin: auto
 }
