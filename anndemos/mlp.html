@@ -98,6 +98,7 @@
                     var minY = grooveBB.y;
 
                     function move(dx, dy) {
+                        dy = 0.5 * dy;
                         var diff = dy - (this.dy || 0);
                         var Y = this.attr("cy") + diff;
                         if (Y > maxY) {
