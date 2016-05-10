@@ -1,0 +1,30 @@
+﻿<!DOCTYPE html>
+
+<html>
+<head>
+    <title>DNN on CIFAR10</title>
+
+    <link rel="stylesheet" href="./css/site.css" />
+</head>
+<body class="app">
+    <div id="holder"></div>
+
+    <script src="./lib/jquery/dist/jquery.min.js"></script>
+    <script src="./lib/raphael/raphael.js"></script>
+    <script src="./js/viewer.js"></script>
+    <script type="text/javascript" charset="utf-8">
+        /// <reference path="../Typescript/viewer.ts" />
+        window.onload = function () {
+            var r = Raphael("holder", 560, 1062);
+
+            r.setViewBox(0, 0, 280, 531, true);
+
+            with (Viewer) {
+                var networkInfo = $.getJSON("networks/cifar/dnn/network.json", function (data) {
+                    var diagram = new LayerDiagram("networks/cifar/dnn/", data, 3, 7, 1, 266, 529, r);
+                });
+            }
+        };
+    </script>
+</body>
+</html>

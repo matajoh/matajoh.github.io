@@ -20,8 +20,8 @@
             r.setViewBox(0, 0, 280, 531, true);
 
             with (Viewer) {
-                var networkInfo = $.getJSON("networks/simple/network.json", function (data) {
-                    var diagram = new LayerDiagram("networks/simple/", data, 2, 1, 1, 278, 529, r);
+                var networkInfo = $.getJSON("networks/mnist/simple/network.json", function (data) {
+                    var diagram = new LayerDiagram("networks/mnist/simple/", data, 2, 1, 1, 278, 529, r);
                 });
             }
         };
