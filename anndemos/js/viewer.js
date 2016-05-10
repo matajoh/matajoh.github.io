@@ -13,13 +13,15 @@ var Viewer;
             var transitions = {
                 'Sigmoid': Transition.Sigmoid,
                 'Linear': Transition.Linear,
+                'ReLU': Transition.ReLU,
                 undefined: Transition.Linear
             };
             var layerFactory = {
                 'FullyConnected': function (layerInfo) { return new FullyConnected(layerInfo['nodeCount'], transitions[layerInfo['transition']]); },
                 'Input': function (layerInfo) { return new Input(layerInfo['nodeCount'], transitions[layerInfo['transition']]); },
-                'Convolutional': function (layerInfo) { return new Convolutional(layerInfo['nodeCount'], layerInfo['width'], layerInfo['height'], layerInfo['size'], layerInfo['stride'], transitions[layerInfo['transition']]); },
-                'Input2D': function (layerInfo) { return new Input2D(layerInfo['channels'], layerInfo['width'], layerInfo['height'], transitions[layerInfo['transition']]); }
+                'Convolutional': function (layerInfo) { return new Convolutional(layerInfo['nodeCount'], layerInfo['width'], layerInfo['height'], layerInfo['size'], layerInfo['stride'], layerInfo['padding'], transitions[layerInfo['transition']]); },
+                'Input2D': function (layerInfo) { return new Input2D(layerInfo['channels'], layerInfo['width'], layerInfo['height'], transitions[layerInfo['transition']]); },
+                'Pooling': function (layerInfo) { return new Pooling(layerInfo['op'], layerInfo['channels'], layerInfo['width'], layerInfo['height'], layerInfo['size'], layerInfo['stride'], layerInfo['padding'], transitions[layerInfo['transition']]); },
             };
             this.layers = [];
             var layerNames = [];
@@ -76,6 +78,9 @@ var Viewer;
                 if (i < this.layers.length - 1) {
                     if (this.layers[i].transition == Transition.Sigmoid) {
                         this.layoutSigmoid(x, y + 0.5 * (height - transitionHeight), transitionWidth, transitionHeight);
+                    }
+                    else if (this.layers[i].transition == Transition.ReLU) {
+                        this.layoutReLU(x, y + 0.5 * (height - transitionHeight), transitionWidth, transitionHeight);
                     }
                     else {
                         this.layoutLinear(x, y + 0.5 * (height - transitionHeight), transitionWidth, transitionHeight);
@@ -216,7 +221,22 @@ var Viewer;
                 cx + pathX,
                 ",",
                 cy - pathY]);
-            this.raphael.path(path).attr({ "stroke": "#000", "stroke-width": 2 });
+            this.raphael.path(path).attr({ "stroke": "#000", "stroke-width": 1 });
+        };
+        LayerDiagram.prototype.layoutReLU = function (x, y, width, height) {
+            var ANGLE = Math.PI * 0.25;
+            this.raphael.path(this.arrow(x, y, width, height)).attr({ "fill": "#ddd", "stroke": "none" });
+            this.raphael.circle(x + 0.5 * width, y + 0.5 * height, height).attr({ "fill": "#fff", "stroke": "#818181" });
+            var cx = x + 0.5 * width;
+            var cy = y + 0.5 * height;
+            var radius = height;
+            var pathX = Math.cos(ANGLE) * radius * 0.7;
+            var pathY = Math.sin(ANGLE) * radius * 0.7;
+            var path = concat([
+                "M", cx - radius * 0.7, ",", cy,
+                "H", cx,
+                "L", cx + pathX, ",", cy - pathY]);
+            this.raphael.path(path).attr({ "stroke": "#000", "stroke-width": 1 });
         };
         LayerDiagram.FONT_SIZE = 10;
         LayerDiagram.MAX_NODES = 10;
@@ -272,6 +292,7 @@ var Viewer;
     (function (Transition) {
         Transition[Transition["Linear"] = 0] = "Linear";
         Transition[Transition["Sigmoid"] = 1] = "Sigmoid";
+        Transition[Transition["ReLU"] = 2] = "ReLU";
     })(Transition || (Transition = {}));
     var Layer = (function () {
         function Layer(output, transition) {
@@ -383,8 +404,9 @@ var Viewer;
     }(Layer));
     var Convolutional = (function (_super) {
         __extends(Convolutional, _super);
-        function Convolutional(nodeCount, width, height, size, stride, transition) {
+        function Convolutional(nodeCount, width, height, size, stride, padding, transition) {
             if (stride === void 0) { stride = 1; }
+            if (padding === void 0) { padding = 0; }
             if (transition === void 0) { transition = Transition.Linear; }
             _super.call(this, 0, transition);
             this.nodeCount = nodeCount;
@@ -392,9 +414,10 @@ var Viewer;
             this.height = height;
             this.size = size;
             this.stride = stride;
+            this.padding = padding;
             this.transition = transition;
-            this.outputWidth = Math.ceil((width - size) / stride) + 1;
-            this.outputHeight = Math.ceil((height - size) / stride) + 1;
+            this.outputWidth = Math.ceil((width + 2 * padding - size) / stride) + 1;
+            this.outputHeight = Math.ceil((height + 2 * padding - size) / stride) + 1;
             this.output = this.outputWidth * this.outputHeight * nodeCount;
         }
         Convolutional.prototype.layout = function (x, y, width, height, index, raphael) {
@@ -411,10 +434,37 @@ var Viewer;
                 this.shape.push(raphael.rect(xx, yy, nodeWidth, nodeWidth).attr({ 'fill': '#5b9bd5', 'stroke': '#41719c' }));
                 yy += nodeWidth + whiteSpace;
             }
-            attachTop(raphael, x + 0.5 * width, y, "C" + index + "[" + this.size + "x" + this.size + (this.stride > 0 ? "@" + this.stride : "") + "]");
+            attachTop(raphael, x + 0.5 * width, y, "C" + index + "[" + this.size + "x" + this.size + (this.stride > 1 ? "@" + this.stride : "") + "]");
             attachBottom(raphael, x + 0.5 * width, y + height, this.nodeCount + "x" + this.outputWidth + "x" + this.outputHeight);
         };
         return Convolutional;
+    }(Layer));
+    var Pooling = (function (_super) {
+        __extends(Pooling, _super);
+        function Pooling(op, channels, width, height, size, stride, padding, transition) {
+            if (stride === void 0) { stride = 1; }
+            if (padding === void 0) { padding = 0; }
+            if (transition === void 0) { transition = Transition.Linear; }
+            _super.call(this, 0, transition);
+            this.op = op;
+            this.channels = channels;
+            this.width = width;
+            this.height = height;
+            this.size = size;
+            this.stride = stride;
+            this.padding = padding;
+            this.transition = transition;
+            this.outputWidth = Math.ceil((width + 2 * padding - size) / stride);
+            this.outputHeight = Math.ceil((height + 2 * padding - size) / stride);
+            this.output = channels * this.outputWidth * this.outputHeight;
+        }
+        Pooling.prototype.layout = function (x, y, width, height, index, raphael) {
+            _super.prototype.layout.call(this, x, y, width, height, index, raphael);
+            raphael.text(x + 0.5 * width, y + 0.5 * height, this.op).rotate(-90).attr({ "font-size": 8, 'fill': '#5b9bd5' });
+            attachTop(raphael, x + 0.5 * width, y, "P" + index + "[" + this.size + "x" + this.size + (this.stride > 1 ? "@" + this.stride : "") + "]");
+            attachBottom(raphael, x + 0.5 * width, y + height, this.channels + "x" + this.outputWidth + "x" + this.outputHeight);
+        };
+        return Pooling;
     }(Layer));
 })(Viewer || (Viewer = {}));
 //# sourceMappingURL=viewer.js.map
