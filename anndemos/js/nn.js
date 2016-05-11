@@ -591,29 +591,43 @@ var NeuralNets;
                 }
             }
         }
-        Grid.prototype.addPosPoint = function (x, y) {
+        Grid.prototype.addPosPoints = function (points) {
             var _this = this;
-            var xx = (x + 1) * this.scaleX + this.x;
-            var yy = (this.height - ((y + 1) * this.scaleY)) + this.y;
-            var shape = this.raphael.path(cross(xx, yy, 8, 2)).attr({ "fill": "#000", "stroke": "#fff" });
-            var point = new Point(x, y, shape);
-            this.posPoints.push(point);
-            shape.click(function () {
-                _this.net.forward(true, [x, y]);
-            });
-            return point;
+            var _loop_1 = function(i) {
+                var x = points[i][0];
+                var y = points[i][1];
+                var xx = (x + 1) * this_1.scaleX + this_1.x;
+                var yy = (this_1.height - ((y + 1) * this_1.scaleY)) + this_1.y;
+                var shape = this_1.raphael.path(cross(xx, yy, 8, 2)).attr({ "fill": "#000", "stroke": "#fff" });
+                var point = new Point(x, y, shape);
+                this_1.posPoints.push(point);
+                shape.click(function () {
+                    _this.net.forward(true, [x, y]);
+                });
+            };
+            var this_1 = this;
+            for (var i = 0; i < points.length; i++) {
+                _loop_1(i);
+            }
         };
-        Grid.prototype.addNegPoint = function (x, y) {
+        Grid.prototype.addNegPoints = function (points) {
             var _this = this;
-            var xx = (x + 1) * this.scaleX + this.x;
-            var yy = (this.height - ((y + 1) * this.scaleY)) + this.y;
-            var shape = this.raphael.circle(xx, yy, 4).attr({ "fill": "#000", "stroke": "#fff" });
-            var point = new Point(x, y, shape);
-            this.negPoints.push(point);
-            shape.click(function () {
-                _this.net.forward(true, [x, y]);
-            });
-            return point;
+            var _loop_2 = function(i) {
+                var x = points[i][0];
+                var y = points[i][1];
+                var xx = (x + 1) * this_2.scaleX + this_2.x;
+                var yy = (this_2.height - ((y + 1) * this_2.scaleY)) + this_2.y;
+                var shape = this_2.raphael.circle(xx, yy, 4).attr({ "fill": "#000", "stroke": "#fff" });
+                var point = new Point(x, y, shape);
+                this_2.negPoints.push(point);
+                shape.click(function () {
+                    _this.net.forward(true, [x, y]);
+                });
+            };
+            var this_2 = this;
+            for (var i = 0; i < points.length; i++) {
+                _loop_2(i);
+            }
         };
         Grid.prototype.presentBatch = function () {
             var i = 0;
@@ -824,5 +838,39 @@ var NeuralNets;
         return BackpropPlayer;
     }());
     NeuralNets.BackpropPlayer = BackpropPlayer;
+    var DatasetButton = (function () {
+        function DatasetButton(x, y, width, height, name, posPoints, negPoints, grid, raphael) {
+            var _this = this;
+            this.name = name;
+            this.posPoints = posPoints;
+            this.negPoints = negPoints;
+            this.grid = grid;
+            this.shape = [];
+            this.shape.push(raphael.rect(x, y, width, height).attr("fill", "#fff"));
+            this.shape.push(raphael.text(x + 0.5 * width, y + 0.5 * height, name));
+            this.shape[1].mouseover(function (e) {
+                this[0].style.cursor = "default";
+            });
+            this.shape[1].mouseout(function (e) {
+                this[0].style.cursor = "";
+            });
+            for (var i = 0; i < this.shape.length; i++) {
+                this.shape[i].click(function () {
+                    var url = window.location.href;
+                    url = url.substring(0, url.indexOf('?'));
+                    window.location.replace(url + "?dataset=" + _this.name);
+                });
+            }
+        }
+        DatasetButton.prototype.select = function () {
+            this.selected = true;
+            this.shape[0].attr("fill", "#0d7fd9");
+            this.shape[1].attr("fill", "#fff");
+            this.grid.addPosPoints(this.posPoints);
+            this.grid.addNegPoints(this.negPoints);
+        };
+        return DatasetButton;
+    }());
+    NeuralNets.DatasetButton = DatasetButton;
 })(NeuralNets || (NeuralNets = {}));
 //# sourceMappingURL=nn.js.map

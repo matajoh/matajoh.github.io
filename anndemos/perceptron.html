@@ -14,6 +14,16 @@
     <script src="./js/nn.js"></script>
     <script type="text/javascript" charset="utf-8">
         /// <reference path="../Typescript/nn.ts" />
+        function getParameterByName(name, url) {
+            if (!url) url = window.location.href;
+            name = name.replace(/[\[\]]/g, "\\$&");
+            var regex = new RegExp("[?&]" + name + "(=([^&#]*)|&|#|$)"),
+                results = regex.exec(url);
+            if (!results) return null;
+            if (!results[2]) return '';
+            return decodeURIComponent(results[2].replace(/\+/g, " "));
+        }
+
         window.onload = function () {
             var r = Raphael("holder", 560, 1062);
 
@@ -23,22 +33,27 @@
                 var net = new Net(r);
 
                 var grid = new Grid(76, 6, 128, 128, 16, 16, net, r);
-                var points = [];
-                points.push(grid.addPosPoint(-0.02, 0.14));
-                points.push(grid.addPosPoint(-0.5, 0.2));
-                points.push(grid.addPosPoint(-0.1, -0.42));
-                points.push(grid.addPosPoint(0.23, -0.32));
-                points.push(grid.addPosPoint(-0.43, -0.22));
-                points.push(grid.addPosPoint(0.63, -0.72));
-                points.push(grid.addPosPoint(-0.15, 0.24));
+                var datasets = {
+                    "outlier": new DatasetButton(10, 40, 40, 20, "outlier", 
+                                                [[-0.02, 0.14],[-0.5, 0.2],[-0.1, -0.42],[0.23, -0.32],[-0.43, -0.22],[0.63, -0.72],[-0.15, 0.24]], 
+                                                [[-0.71, 0.57], [0.1, 0.62], [-0.33, 0.71], [0.55, 0.13], [0.64, 0.81], [0.91, 0.37], [-0.8, -.3]],
+                                                grid, r),
+                    "xor": new DatasetButton(10, 60, 40, 20, "xor",
+                                                [[-0.02, -0.14], [0.5, 0.2], [0.1, 0.42], [0.23, 0.32], [-0.43, -0.22], [-0.63, -0.72], [-0.15, -0.24]],
+                                                [[-0.71, 0.57], [0.1, -0.62], [-0.33, 0.71], [0.55, -0.13], [-0.64, 0.81], [0.91, -0.37], [-0.8, .3]],
+                                                grid, r),
+                    "donut": new DatasetButton(10, 80, 40, 20, "donut",
+                                                [[-0.02, -0.14], [0.1, 0.2], [0.1, 0.12], [0.2, 0.12], [-0.23, -0.22], [-0.13, -0.12], [-0.15, -0.24]],
+                                                [[0.71, 0.57], [0.1, -0.62], [-0.33, 0.71], [0.13, 0.55], [-0.64, -0.81], [0.91, -0.37], [-0.8, .3]],
+                                                grid, r)
+                }
 
-                points.push(grid.addNegPoint(-0.71, 0.57));
-                points.push(grid.addNegPoint(0.1, 0.62));
-                points.push(grid.addNegPoint(-0.33, 0.71));
-                points.push(grid.addNegPoint(0.55, 0.13));
-                points.push(grid.addNegPoint(0.64, 0.81));
-                points.push(grid.addNegPoint(0.91, 0.37));
-                points.push(grid.addNegPoint(-0.8, -.3));
+                var dataset = getParameterByName("dataset");
+                if (datasets[dataset]) {
+                    datasets[dataset].select();
+                } else {
+                    datasets["outlier"].select();
+                }
 
                 var inputX = net.addInput(36, 150, 53, 1, "x");
                 var inputY = net.addInput(147, 150, 53, 1, "y");
