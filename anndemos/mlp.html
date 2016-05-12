@@ -93,14 +93,16 @@
                 var w4b = net.addWeight(b1, n4, "w4b");
 
                 var softmax = net.setSoftMax(66, 428, 105, 52);
-                softmax.addInput(n2);
                 softmax.addInput(n3);
+                softmax.addInput(n4);
 
                 var slider = new Slider(262, 171, 308, net, grid, r);
                 slider.register(inputX);
                 slider.register(inputY);
+               
+                var lossCurve = new LossCurve(220, 75, 60, 30, grid, r);
 
-                var backpropPlayer = new BackpropPlayer(220, 110, grid, $("#holder"), r);
+                var backpropPlayer = new BackpropPlayer(220, 110, grid, lossCurve, $("#holder"), r);
 
                 grid.classify(net);
             }

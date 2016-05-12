@@ -52,6 +52,7 @@ var NeuralNets;
         Net.prototype.present = function (display, label, values) {
             this.forward(false, values);
             this.output.backprop(label);
+            return this.output.computeLoss(label);
         };
         Net.prototype.update = function (scale) {
             this.output.update(scale);
@@ -200,6 +201,10 @@ var NeuralNets;
                 }
                 this.computeFlag = true;
             }
+        };
+        SoftMax.prototype.computeLoss = function (label) {
+            var prob = Math.max(Math.min(this.values[label], 1 - 1e-15), 1e-15);
+            return Math.log(prob);
         };
         SoftMax.prototype.update = function (scale) {
             for (var i = 0; i < this.inputs.length; i++) {
@@ -544,6 +549,9 @@ var NeuralNets;
         };
         Perceptron.prototype.backprop = function (sensitivity) {
         };
+        Perceptron.prototype.computeLoss = function () {
+            return 0;
+        };
         Perceptron.prototype.reset = function () {
             if (this.computeFlag) {
                 this.computeFlag = false;
@@ -635,15 +643,18 @@ var NeuralNets;
             for (i = 0; i < this.net.inputs.length; i++) {
                 originalValues[i] = this.net.inputs[i].value;
             }
+            var loss = 0;
             for (var i_1 = 0; i_1 < this.posPoints.length; i_1++) {
                 var input = this.posPoints[i_1];
-                this.net.present(false, 1, [input.x, input.y]);
+                loss -= this.net.present(false, 1, [input.x, input.y]);
             }
             for (var i_2 = 0; i_2 < this.negPoints.length; i_2++) {
                 var input = this.negPoints[i_2];
-                this.net.present(false, 0, [input.x, input.y]);
+                loss -= this.net.present(false, 0, [input.x, input.y]);
             }
-            this.net.update(1.0 / (this.posPoints.length + this.negPoints.length));
+            var norm = 1.0 / (this.posPoints.length + this.negPoints.length);
+            this.net.update(norm);
+            this.loss = norm * loss;
             this.net.forward(true, originalValues);
         };
         Grid.prototype.classify = function () {
@@ -749,9 +760,10 @@ var NeuralNets;
     }());
     NeuralNets.Slider = Slider;
     var BackpropPlayer = (function () {
-        function BackpropPlayer(x, y, grid, holder, raphael) {
+        function BackpropPlayer(x, y, grid, lossCurve, holder, raphael) {
             var _this = this;
             this.grid = grid;
+            this.lossCurve = lossCurve;
             this.iteration = 0;
             this.isPlaying = false;
             var player = raphael.rect(x, y, 60, 25, 3).attr({ "fill": "#0d7fd9", "stroke": "none" });
@@ -822,6 +834,7 @@ var NeuralNets;
             var _this = this;
             this.grid.presentBatch();
             this.grid.classify();
+            this.lossCurve.addSample();
             this.iteration++;
             this.iterationText.attr("text", this.iteration.toString());
             if (this.iteration < BackpropPlayer.MAX_ITER) {
@@ -872,5 +885,42 @@ var NeuralNets;
         return DatasetButton;
     }());
     NeuralNets.DatasetButton = DatasetButton;
+    var LossCurve = (function () {
+        function LossCurve(x, y, width, height, grid, raphael) {
+            this.x = x;
+            this.y = y;
+            this.width = width;
+            this.height = height;
+            this.grid = grid;
+            this.raphael = raphael;
+            this.lossCurve = [];
+            raphael.rect(x, y, width, height).attr({ "fill": "#fff" });
+            raphael.text(x + 0.5 * width, y + 0.5 * height, "loss").attr("fill", "#bbb");
+            this.path = raphael.path("M" + x + "," + y).attr("stroke", "#0d7fd9");
+        }
+        LossCurve.prototype.addSample = function () {
+            this.lossCurve.push(this.grid.loss);
+            var max = this.lossCurve[0];
+            for (var i = 1; i < this.lossCurve.length; i++) {
+                max = Math.max(max, this.lossCurve[i]);
+            }
+            if (this.lossCurve.length == 1) {
+                return;
+            }
+            var xScale = this.width / (this.lossCurve.length - 1);
+            var yScale = this.height / max;
+            var xx = this.x;
+            var yy = this.y;
+            var pathString = "M" + xx + "," + yy;
+            for (var i = 1; i < this.lossCurve.length; i++) {
+                xx += xScale;
+                yy = this.y + ((max - this.lossCurve[i]) * yScale);
+                pathString += "L" + xx + "," + yy;
+            }
+            this.path.attr("path", pathString);
+        };
+        return LossCurve;
+    }());
+    NeuralNets.LossCurve = LossCurve;
 })(NeuralNets || (NeuralNets = {}));
 //# sourceMappingURL=nn.js.map
