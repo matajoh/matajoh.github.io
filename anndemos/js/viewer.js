@@ -94,6 +94,8 @@ var Viewer;
                 layerHeight = heightScale * Math.log(this.layers[i].output);
                 layer = this.layers[i];
                 var prev = this.layers[i - 1];
+                prev.thumbnail = raphael.image("", x - 0.5 * transitionWidth - 8, y + 0.5 * (height + 2.5 * transitionHeight), 16, 16);
+                prev.thumbnail.hide();
                 if (layer instanceof ResBlock) {
                     layer.layout(x, y + 0.5 * (height - layerHeight), ResBlock.UNIT_COUNT * layerWidth, layerHeight, i, raphael);
                     this.layoutTransition(prev.transition, x - transitionWidth, ty - transitionHeight, layer.topInput.x, layer.topInput.y, transitionHeight);
@@ -106,8 +108,6 @@ var Viewer;
                     x += layerWidth;
                 }
                 x += transitionWidth;
-                prev.thumbnail = raphael.image("", x - 0.5 * transitionWidth - 8, y + 0.5 * (height + 2.5 * transitionHeight), 16, 16);
-                prev.thumbnail.hide();
             }
             // add click handlers
             var layers = this.layers;
