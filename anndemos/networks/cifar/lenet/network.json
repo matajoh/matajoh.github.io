@@ -191,7 +191,7 @@
         {
             "height": 14,
             "name": "c3",
-            "nodeCount": 6,
+            "nodeCount": 16,
             "size": 5,
             "type": "Convolutional",
             "width": 14
@@ -199,7 +199,7 @@
         {
             "height": 10,
             "name": "s4",
-            "nodeCount": 6,
+            "nodeCount": 16,
             "size": 2,
             "stride": 2,
             "transition": "Sigmoid",

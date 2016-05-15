@@ -17,11 +17,11 @@
         window.onload = function () {
             var r = Raphael("holder", 560, 1062);
 
-            r.setViewBox(0, 0, 280, 531, true);
+            r.setViewBox(0, 0, 420, 796, true);
 
             with (Viewer) {
                 var networkInfo = $.getJSON("networks/cifar/lenet/network.json", function (data) {
-                    var diagram = new LayerDiagram("networks/cifar/lenet/", data, 3, 7, 1, 266, 529, r);
+                    var diagram = new LayerDiagram("networks/cifar/lenet/", data, 3.5, 7, 1, 406, 794, r);
                 });
             }
         };
