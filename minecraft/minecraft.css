@@ -1,33 +1,33 @@
 html {
-  font-size: 0.1rem;
+  font-size: 0.3rem;
   -webkit-text-size-adjust: none;
 }
 
 /* Small devices (landscape phones, 576px and up) */
 @media (min-width: 576px) {
   html {
-    font-size: 0.1rem;
+    font-size: 0.4rem;
   }  
 }
 
 /* Medium devices (tablets, 768px and up) */
 @media (min-width: 768px) {
   html {
-    font-size: 0.1rem;
+    font-size: 0.6rem;
   }  
 }
 
 /* Large devices (desktops, 992px and up) */
 @media (min-width: 992px) {
   html {
-    font-size: 0.1rem;
+    font-size: 0.7rem;
   }  
 }
 
 /* Extra large devices (large desktops, 1200px and up) */
 @media (min-width: 1200px) { 
   html {
-    font-size: 0.1rem;
+    font-size: 1rem;
   }  
 }
 
