@@ -6,21 +6,21 @@ html {
 /* Small devices (landscape phones, 576px and up) */
 @media (min-width: 576px) {
   html {
-    font-size: 0.4rem;
+    font-size: 0.3rem;
   }  
 }
 
 /* Medium devices (tablets, 768px and up) */
 @media (min-width: 768px) {
   html {
-    font-size: 0.6rem;
+    font-size: 0.5rem;
   }  
 }
 
 /* Large devices (desktops, 992px and up) */
 @media (min-width: 992px) {
   html {
-    font-size: 0.7rem;
+    font-size: 0.6rem;
   }  
 }
 
