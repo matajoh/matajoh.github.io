@@ -1,9 +1,6 @@
-body {
-  -webkit-text-size-adjust: 100%;
-}
-
 html {
   font-size: 0.3rem;
+  -webkit-text-size-adjust: none;
 }
 
 /* Small devices (landscape phones, 576px and up) */
