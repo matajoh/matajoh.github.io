@@ -1,12 +1,12 @@
 html {
-  font-size: 0.3rem;
+  font-size: 0.2rem;
   -webkit-text-size-adjust: none;
 }
 
 /* Small devices (landscape phones, 576px and up) */
 @media (min-width: 576px) {
   html {
-    font-size: 0.5rem;
+    font-size: 0.4rem;
   }  
 }
 
