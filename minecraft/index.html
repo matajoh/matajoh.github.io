@@ -34,16 +34,16 @@
         </div>
         <div class="carousel-item">
           <div class="carousel-content">
-            <div class="col">
-              <blockquote class="blockquote">
-                <p class="display-4">Intelligent behaviour is what humans do</p>
-                <footer class="blockquote-footer">Alan Turing in
-                  <cite title="Computing Machinery and Intelligence">Computing Machinery and Intelligence</cite>
-                </footer>
-              </blockquote>
-            </div>
-            <div class="col">
-              <img src="images/alan_turing.jpg" class="img-fluid" alt="Alan Turing" />
+            <div class="media">
+              <div class="media-body align-self-center">
+                <blockquote class="blockquote">
+                  <p class="display-4">Intelligent behaviour is what humans do</p>
+                  <footer class="blockquote-footer">Alan Turing in
+                    <cite title="Computing Machinery and Intelligence">Computing Machinery and Intelligence</cite>
+                  </footer>
+                </blockquote>
+              </div>
+              <img src="images/alan_turing.jpg" class="w-50" alt="Alan Turing" />
             </div>
           </div>
         </div>
@@ -106,12 +106,111 @@
           <img src="images/machine_abilities.png" class="d-block w-100" alt="Machine Abilities: Speak" />
         </div>
         <div class="carousel-item">
-            <div class="carousel-content">
-              <h1 class="display-3">Video Games for AI</h1>
-            </div>
-          </div>        
+          <img src="images/ai_pipeline.png" class="d-block w-100" alt="AI Pipeline" />
+        </div>
+        <div class="carousel-item">
+          <img src="images/supervised_learning.png" class="d-block w-100" alt="Supervised Learning" />
+        </div>
+        <div class="carousel-item">
+          <img src="images/interactive_learning.png" class="d-block w-100" alt="Interactive Learning" />
+        </div>
+        <div class="carousel-item">
+          <div class="carousel-content">
+            <h1 class="display-3">Video Games for AI</h1>
+          </div>
+        </div>
         <div class="carousel-item">
           <img src="images/atari.png" class="d-block w-100" alt="Atari screenshots" />
+        </div>
+        <div class="carousel-item">
+          <img src="images/malmo_media_splash.png" class="d-block w-100" alt="Malmo media splash" />
+        </div>
+        <div class="carousel-item">
+          <div class="carousel-content">
+            <div class="media">
+              <img src="images/minecraft.png" class="align-self-center w-50" alt="Minecraft images" />
+              <div class="media-body">
+                <h5 class="display-4">Minecraft for AI Experimentation</h5>
+                <ul class="list-group list-group-flush">
+                  <li class="list-group-item h4">Large amounts of data</li>
+                  <li class="list-group-item h4">Wide variety of tasks</li>
+                  <li class="list-group-item h4">Speed</li>
+                  <li class="list-group-item h4">Repeatability</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="carousel-item">
+          <div class="carousel-content">
+            <div class="media">
+              <video class="align-self-center" width="50%" autoplay loop>
+                <source src="videos/my_first_agent.mp4" type="video/mp4"> Your browser does not support the video tag.
+              </video>
+              <div class="media-body">
+                <pre class="prettyprint lang-py"><code>
+    import MalmoAgent
+    import time
+
+    agent_host = MalmoPython.AgentHost()
+    my_mission = MalmoPython.MissionSpec("my_mission.xml")
+
+    my_mission_record = MalmoPython.MissionSpec("save.tgz")
+    agent_host.startMission( my_mission, my_mission_record )
+
+    world_state = agent_host.peekWorldState()
+    while world_state.is_mission_running:
+        // interpret world state
+        world_state = agent_host.getWorldState()
+        for reward in world_state.rewards:
+            print "Summed reward:",reward.value
+        for observation in world_state.observations:
+            print "Observation:",observation.text
+        // act
+        agent_host.sendCommand( "move 1" )
+        agent_host.sendCommand( "turn 0.5" )     
+        agent_host.sendCommand( "jump 1" )
+        time.sleep(0.1)                  
+                  </code></pre>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="carousel-item">
+          <div class="carousel-content">
+            <div class="media">
+              <img src="images/cliff_walking_task.png" class="w-50 align-self-center" alt="Cliff Walking Task" />
+              <div class="media-body">
+                <pre class="prettyprint lang-xml"><code>
+[...]
+&lt;ServerHandlers&gt;
+  &lt;FlatWorldGenerator&gt; 
+    generatorString="3;7,220*1,5*3,2;3;,biome_1"/&gt;
+  &lt;DrawingDecorator&gt;
+    &lt;!-- limits of our arena --&gt;
+    &lt;DrawCuboid x1="-2" y1="46" z1="-2" x2="7" y2="50“
+      z2="18" type="air" /&gt;
+    &lt;!-- lava floor --&gt;
+    &lt;DrawCuboid x1="-2" y1="45" z1="-2" x2="7" y2="45“
+      z2="18" type="lava" /&gt;
+    &lt;!-- floor of the arena --&gt;
+    &lt;DrawCuboid x1="1" y1="45" z1="1" x2="3" y2="45“
+      z2="12" type="sandstone" /&gt;
+    &lt;!-- the starting marker --&gt;
+    &lt;DrawBlock x="4" y="45" z="1" type="cobblestone" /&gt;
+    &lt;!-- the destination marker --&gt;
+    &lt;DrawBlock x="4" y="45" z="12" type="lapis_block" /&gt;
+    &lt;!-- another destination marker --&gt;
+    &lt;DrawItem x="4" y="46" z="12" type="diamond" /&gt;
+  &lt;/DrawingDecorator&gt;
+  &lt;ServerQuitFromTimeUp timeLimitMs="10000"/&gt;
+  &lt;ServerQuitWhenAnyAgentFinishes/&gt;
+&lt;/ServerHandlers&gt;
+[...]                  
+                </code></pre>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
       <a class="carousel-control-prev" href="#slideshow" role="button" data-slide="prev">
@@ -136,6 +235,7 @@
     crossorigin="anonymous"></script>
   <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl"
     crossorigin="anonymous"></script>
+  <script src="https://cdn.rawgit.com/google/code-prettify/master/loader/run_prettify.js"></script>
   <script src="minecraft.js"></script>
 </body>
 
