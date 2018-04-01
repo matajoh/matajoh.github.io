@@ -1,12 +1,9 @@
-.carousel-content {
-  color:black;
-  display:flex;
-  align-items:center;
+body {
+  -webkit-text-size-adjust: 100%;
 }
 
 html {
   font-size: 0.3rem;
-  -webkit-text-size-adjust: 100%;
 }
 
 /* Small devices (landscape phones, 576px and up) */
@@ -35,4 +32,10 @@ html {
   html {
     font-size: 1rem;
   }  
+}
+
+.carousel-content {
+  color:black;
+  display:flex;
+  align-items:center;
 }
