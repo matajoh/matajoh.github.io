@@ -20,7 +20,7 @@ html {
 /* Large devices (desktops, 992px and up) */
 @media (min-width: 992px) {
   html {
-    font-size: 0.7rem;
+    font-size: 0.8rem;
   }  
 }
 
