@@ -1,5 +1,5 @@
 html {
-  font-size: 0.2rem;
+  font-size: 0.3rem;
   -webkit-text-size-adjust: none;
 }
 
@@ -20,7 +20,7 @@ html {
 /* Large devices (desktops, 992px and up) */
 @media (min-width: 992px) {
   html {
-    font-size: 0.8rem;
+    font-size: 0.7rem;
   }  
 }
 
