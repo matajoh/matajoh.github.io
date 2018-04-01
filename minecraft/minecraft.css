@@ -6,6 +6,7 @@
 
 html {
   font-size: 0.3rem;
+  -webkit-text-size-adjust: 100%;
 }
 
 /* Small devices (landscape phones, 576px and up) */
