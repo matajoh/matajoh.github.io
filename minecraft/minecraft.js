@@ -15,3 +15,7 @@ function setCarouselHeight(id) {
 }
 
 setCarouselHeight('#slideshow');
+
+window.onorientationchange = function() {
+    setCarouselHeight('#slideshow');
+}
