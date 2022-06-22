@@ -1,0 +1,19 @@
+{
+  "@context": "https://www.w3.org/ns/did/v1",
+  "id": "did:web:matajoh.github.io",
+  "assertionMethod": [
+    {
+      "id": "did:web:matajoh.github.io#3e675046a0c923badaa5a678c09c020d414e1ef40adc01fd9052bd934ec4a502",
+      "type": "JsonWebKey2020",
+      "controller": "did:web:matajoh.github.io",
+      "publicKeyJwk": {
+        "kid": "3e675046a0c923badaa5a678c09c020d414e1ef40adc01fd9052bd934ec4a502",
+        "kty": "EC",
+        "alg": "ES256",
+        "x5c": [
+          "MIIBKzCB0qADAgECAhQsBaLBm29qAU8wWg8AvOHt/kEAOzAKBggqhkjOPQQDAjAWMRQwEgYDVQQDDAtzZWxmLXNpZ25lZDAeFw0yMjA2MjIwODE0MTdaFw0yMjA3MDIwODE0MTdaMBYxFDASBgNVBAMMC3NlbGYtc2lnbmVkMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEqdPi+oCauUvFtthQC+ly3bUbuFXEiS3uu9746N7N/1NTF8HfcGNNHEAtbPl3lUl7OCMBMw5D05VMokHZvEGzpDAKBggqhkjOPQQDAgNIADBFAiBn2M+pur5r6FH+zoPfD2Pv2jSEZUyxWfMG3EfEll51KAIhAPT1wOa5tRgUVbAVyxthx/45y2e2WZpbfXyDoq14bahI"
+        ]
+      }
+    }
+  ]
+}
