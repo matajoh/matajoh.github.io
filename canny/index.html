@@ -22,15 +22,21 @@
     <script>
         let theShader;
         let cam;
-
-        const width = 640;
-        const height = 480;
+        let width = 640;
+        let height = 480;
 
         function preload() {
             theShader = loadShader('canny.vert', 'canny.frag');
         }
 
         function setup() {
+            const isPortrait = window.matchMedia('(orientation: portrait)').matches;
+
+            if(isPortrait) {
+                width = 480;
+                height = 640;
+            }
+
             canvas = document.getElementById('canvas');
             createCanvas(width, height, WEBGL, canvas);
             noStroke();
