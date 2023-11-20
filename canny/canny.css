@@ -23,3 +23,12 @@ body {
     width: 320px;
     height: 60px;
 }
+
+canvas {
+    margin-bottom: 30px;
+}
+
+h3 {
+    margin-top: 20px;
+    margin-bottom: 0px;
+}
