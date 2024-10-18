@@ -22,9 +22,11 @@
         <div class="controls">
             <label for="source">Camera</label>
             <select id="source" onchange="switchCamera()">
+                <option value="environment" selected="selected">Back</option>
                 <option value="user">Front</option>
-                <option value="environment">Back</option>
             </select>
+            <label for="flipped">Flipped</label>
+            <input type="checkbox" id="flipped">
         </div>
         <div class="controls">
             <label for="showCode">Show Code:</label>
@@ -112,12 +114,17 @@ vec4 harrisEdges(
 uniform sampler2D uSampler;
 uniform vec2 uResolution;
 uniform float uThreshold;
+uniform bool uFlipped;
 
 varying vec2 vTexCoord;
 
 void main() {
-    vec2 uv = vTexCoord;
-    uv = 1.0 - uv;
+  vec2 uv = vTexCoord;
+
+  uv.y = 1.0 - uv.y;
+  if(uFlipped){
+    uv.x = 1.0 - uv.x;
+  }
 
     gl_FragColor = harrisEdges(uSampler, uv, uResolution, uThreshold);
 }
@@ -197,10 +204,15 @@ void main() {
             shader(theShader);
 
             const threshold = document.getElementById('threshold').value / 100.0;
+            let flipped = document.getElementById('source').value === 'user';
+            if(document.getElementById('flipped').checked){
+                flipped = !flipped;
+            }
 
             theShader.setUniform('uSampler', cam);
             theShader.setUniform('uResolution', [width, height]);
             theShader.setUniform('uThreshold', threshold);
+            theShader.setUniform('uFlipped', flipped);
 
             // rect gives us some geometry on the screen
             rect(0, 0, width, height);

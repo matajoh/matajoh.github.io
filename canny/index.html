@@ -21,10 +21,12 @@
         <canvas id="canvas"></canvas>
         <div class="controls">
             <label for="source">Camera</label>
-            <select id="source" onchange="switchCamera()">
+            <select id="source" onchange="switchCamera()" >
+                <option value="environment" selected="selected">Back</option>
                 <option value="user">Front</option>
-                <option value="environment">Back</option>
             </select>
+            <label for="flipped">Flipped</label>
+            <input type="checkbox" id="flipped">
         </div>
         <div class="controls">
             <label for="showCode">Show Code:</label>
@@ -115,12 +117,17 @@ uniform sampler2D uSampler;
 uniform vec2 uResolution;
 uniform float uWeakThreshold;
 uniform float uStrongThreshold;
+uniform bool uFlipped;
 
 varying vec2 vTexCoord;
 
 void main() {
   vec2 uv = vTexCoord;
-  uv = 1.0 - uv;
+
+  uv.y = 1.0 - uv.y;
+  if(uFlipped){
+    uv.x = 1.0 - uv.x;
+  }
  
   gl_FragColor = cannyEdgeDetection(uSampler, uv, uResolution, uWeakThreshold, uStrongThreshold);
 }
@@ -178,7 +185,12 @@ void main() {
             createCanvas(width, height, WEBGL, canvas);
             noStroke();
 
-            cam = createCapture(VIDEO);
+            cam = createCapture({
+                "audio": false,
+                "video": {
+                    "facingMode": document.getElementById('source').value
+                }
+            });
             cam.size(width, height);
 
             cam.hide();
@@ -201,11 +213,16 @@ void main() {
 
             let strongThreshold = document.getElementById('threshold').value / 100;
             let weakThreshold = strongThreshold * 0.7;
+            let flipped = document.getElementById('source').value === 'user';
+            if(document.getElementById('flipped').checked){
+                flipped = !flipped;
+            }
 
             theShader.setUniform('uSampler', cam);
             theShader.setUniform('uWeakThreshold', weakThreshold);
             theShader.setUniform('uStrongThreshold', strongThreshold);
             theShader.setUniform('uResolution', [width, height]);
+            theShader.setUniform('uFlipped', flipped);
 
             // rect gives us some geometry on the screen
             rect(0, 0, width, height);

@@ -78,12 +78,17 @@ uniform sampler2D uSampler;
 uniform vec2 uResolution;
 uniform float uWeakThreshold;
 uniform float uStrongThreshold;
+uniform bool uFlipped;
 
 varying vec2 vTexCoord;
 
 void main() {
   vec2 uv = vTexCoord;
-  uv = 1.0 - uv;
+
+  uv.y = 1.0 - uv.y;
+  if(uFlipped){
+    uv.x = 1.0 - uv.x;
+  }
  
   gl_FragColor = cannyEdgeDetection(uSampler, uv, uResolution, uWeakThreshold, uStrongThreshold);
 }
