@@ -16,8 +16,14 @@
             <input type="range" min="1" max="30" value="10" class="slider" id="threshold">
         </div>
         <canvas id="canvas"></canvas>
-        <h3>Fragment Shader</h3>
-        <pre>
+        <div class="controls">
+            <label for="showCode">Show Code:</label>
+            <input type="checkbox" id="showCode"
+                onchange="document.getElementById('code').style.visibility = this.checked ? 'visible' : 'collapse'">
+        </div>
+        <div id="code" style="visibility: collapse">
+            <h3>Fragment Shader</h3>
+            <pre>
             <code>
 precision mediump float;
 
@@ -110,8 +116,8 @@ void main() {
 }
             </code>
         </pre>
-        <h3>Vertex Shader</h3>
-        <pre>
+            <h3>Vertex Shader</h3>
+            <pre>
             <code>
 precision mediump float;
 
@@ -129,7 +135,8 @@ void main() {
     gl_Position = positionVec4;
 }
             </pre>
-        </code>                
+            </code>
+        </div>
     </div>
 
     <script src="scripts/p5.min.js"></script>
@@ -148,7 +155,7 @@ void main() {
         function setup() {
             const isPortrait = window.matchMedia('(orientation: portrait)').matches;
 
-            if(isPortrait) {
+            if (isPortrait) {
                 width = 480;
                 height = 640;
             }
@@ -162,7 +169,7 @@ void main() {
 
             cam.hide();
         }
-        
+
         function draw() {
             shader(theShader);
 

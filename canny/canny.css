@@ -20,6 +20,11 @@ body {
     margin-right: 10px;
 }
 
+input[type="checkbox"] {
+    width: 30px;
+    height: 30px;
+}
+
 canvas {
     margin-bottom: 30px;
 }
