@@ -17,6 +17,13 @@
         </div>
         <canvas id="canvas"></canvas>
         <div class="controls">
+            <label for="source">Camera</label>
+            <select id="source" onchange="switchCamera()">
+                <option value="user">Front</option>
+                <option value="environment">Back</option>
+            </select>
+        </div>
+        <div class="controls">
             <label for="showCode">Show Code:</label>
             <input type="checkbox" id="showCode"
                 onchange="document.getElementById('code').style.visibility = this.checked ? 'visible' : 'collapse'">
@@ -46,7 +53,7 @@ vec2 gradient_direction(vec2 g)
   float pi4 = pi / 4.0;
   float theta = atan(g.y, g.x);
   theta -= pi / 8.0;
-  theta = theta < 0.0 ? theta + 2.0 * pi : theta;
+  theta = theta &lt; 0.0 ? theta + 2.0 * pi : theta;
   theta = pi4 * floor(theta / pi4);
   return vec2(cos(theta), sin(theta));
 }
@@ -73,7 +80,7 @@ vec4 cannyEdgeDetection(
     vec2 g = gradient(textureSampler, textureCoord, resolution);
     float grad = length(g);
 
-    if(grad < weakThreshold){
+    if(grad &lt; weakThreshold){
         return vec4(vec3(0), 1.0);
     }
 
@@ -83,7 +90,7 @@ vec4 cannyEdgeDetection(
     float grad0 = length(gradient(textureSampler, textureCoord + offDir, resolution));
     float grad1 = length(gradient(textureSampler, textureCoord - offDir, resolution));
 
-    if(grad < grad0 || grad < grad1){
+    if(grad &lt; grad0 || grad &lt; grad1){
         return vec4(vec3(0), 1.0);
     }
 
@@ -167,6 +174,18 @@ void main() {
             cam = createCapture(VIDEO);
             cam.size(width, height);
 
+            cam.hide();
+        }
+
+        function switchCamera() {
+            cam.remove();
+            cam = createCapture({
+                "audio": false,
+                "video": {
+                    "facingMode": document.getElementById('source').value
+                }
+            });
+            cam.size(width, height);
             cam.hide();
         }
 

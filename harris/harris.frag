@@ -53,51 +53,34 @@ vec4 harrisEdges(
     sampler2D image,
     vec2 uv,
     vec2 resolution,
-    float threshold,
-    bool showEdges
+    float threshold
 ) {
-    float h11 = response(image, uv, resolution);
-    if(h11 < -0.025){
+    float h = response(image, uv, resolution);
+    if(h < -0.025){
         // edge
-        if(showEdges){
-            return vec4(vec3(1.0, 0.0, 0.0), 1.0);
-        }else{
-            return texture2D(image, uv);
-        }
+        float strength = clamp(2.0 * (abs(h) - 0.025), 0.0, 1.0);
+        return vec4(vec3(strength, 0.0, 0.0), 1.0);
+    }
+
+    if(h < threshold){
+        // flat
+        return vec4(vec3(0.0, 0.0, 0.0), 1.0);
     }
 
     // corner
-    vec2 dx = vec2(1.0, 0.0) / resolution.x;
-    vec2 dy = vec2(0.0, 1.0) / resolution.y;
-
-    float h00 = response(image, uv - dy - dx, resolution);
-    float h01 = response(image, uv - dy, resolution);
-    float h02 = response(image, uv - dy + dx, resolution);
-    float h10 = response(image, uv - dx, resolution);
-    float h12 = response(image, uv + dx, resolution);
-    float h20 = response(image, uv + dy - dx, resolution);
-    float h21 = response(image, uv + dy, resolution);
-    float h22 = response(image, uv + dy + dx, resolution);
-
-    float max_h = max(max(max(max(max(max(max(h00, h01), h02), h10), h11), h12), h20), h21);
-
-    if(max_h < threshold){
-        return texture2D(image, uv);
-    }
-    
+    float strength = clamp(h, 0.0, 1.0);    
     return vec4(vec3(0.0, 1.0, 0.0), 1.0);
 }
 
 uniform sampler2D uSampler;
 uniform vec2 uResolution;
 uniform float uThreshold;
-uniform bool uShowEdges;
 
 varying vec2 vTexCoord;
 
 void main() {
   vec2 uv = vTexCoord;
   uv = 1.0 - uv;
- 
-  gl_FragColor = harrisEdges(uSampler, uv, uResolution, uThreshold, uShowEdges);
+
+  gl_FragColor = harrisEdges(uSampler, uv, uResolution, uThreshold);
 }

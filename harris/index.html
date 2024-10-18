@@ -15,11 +15,14 @@
             <label for="threshold">Threshold:</label>
             <input type="range" min="1" max="60" value="30" class="slider" id="threshold">
         </div>
-        <div class="controls">
-            <label for="showEdges">Show Edges:</label>
-            <input type="checkbox" id="showEdges">
-        </div>
         <canvas id="canvas"></canvas>
+        <div class="controls">
+            <label for="source">Camera</label>
+            <select id="source" onchange="switchCamera()">
+                <option value="user">Front</option>
+                <option value="environment">Back</option>
+            </select>
+        </div>
         <div class="controls">
             <label for="showCode">Show Code:</label>
             <input type="checkbox" id="showCode"
@@ -29,6 +32,7 @@
             <h3>Fragment Shader</h3>
             <pre>
             <code>
+#pragma vscode_glsllint_stage frag
 precision mediump float;
 
 float grayscale(vec4 color) {
@@ -83,53 +87,36 @@ vec4 harrisEdges(
     sampler2D image,
     vec2 uv,
     vec2 resolution,
-    float threshold,
-    bool showEdges
+    float threshold
 ) {
-    float h11 = response(image, uv, resolution);
-    if(h11 &lt; -0.025){
+    float h = response(image, uv, resolution);
+    if(h &lt; -0.025){
         // edge
-        if(showEdges){
-            return vec4(vec3(1.0, 0.0, 0.0), 1.0);
-        }else{
-            return texture2D(image, uv);
-        }
+        float strength = clamp(2.0 * (abs(h) - 0.025), 0.0, 1.0);
+        return vec4(vec3(strength, 0.0, 0.0), 1.0);
+    }
+
+    if(h &lt; threshold){
+        // flat
+        return vec4(vec3(0.0, 0.0, 0.0), 1.0);
     }
 
     // corner
-    vec2 dx = vec2(1.0, 0.0) / resolution.x;
-    vec2 dy = vec2(0.0, 1.0) / resolution.y;
-
-    float h00 = response(image, uv - dy - dx, resolution);
-    float h01 = response(image, uv - dy, resolution);
-    float h02 = response(image, uv - dy + dx, resolution);
-    float h10 = response(image, uv - dx, resolution);
-    float h12 = response(image, uv + dx, resolution);
-    float h20 = response(image, uv + dy - dx, resolution);
-    float h21 = response(image, uv + dy, resolution);
-    float h22 = response(image, uv + dy + dx, resolution);
-
-    float max_h = max(max(max(max(max(max(max(h00, h01), h02), h10), h11), h12), h20), h21);
-
-    if(max_h &lt; threshold){
-        return texture2D(image, uv);
-    }
-    
+    float strength = clamp(h, 0.0, 1.0);    
     return vec4(vec3(0.0, 1.0, 0.0), 1.0);
 }
 
 uniform sampler2D uSampler;
 uniform vec2 uResolution;
 uniform float uThreshold;
-uniform bool uShowEdges;
 
 varying vec2 vTexCoord;
 
 void main() {
     vec2 uv = vTexCoord;
     uv = 1.0 - uv;
-    
-    gl_FragColor = harrisEdges(uSampler, uv, uResolution, uThreshold, uShowEdges);
+
+    gl_FragColor = harrisEdges(uSampler, uv, uResolution, uThreshold);
 }
             </code>
         </pre>
@@ -187,19 +174,30 @@ void main() {
             cam.hide();
         }
 
+        function switchCamera() {
+            cam.remove();
+            cam = createCapture({
+                "audio": false,
+                "video": {
+                    "facingMode": document.getElementById('source').value
+                }
+            });
+            cam.size(width, height);
+            cam.hide();
+        }
+
         function draw() {
             shader(theShader);
 
-            let threshold = document.getElementById('threshold').value / 100;
-            let showEdges = document.getElementById('showEdges').checked;
+            const threshold = document.getElementById('threshold').value / 100.0;
 
             theShader.setUniform('uSampler', cam);
             theShader.setUniform('uResolution', [width, height]);
             theShader.setUniform('uThreshold', threshold);
-            theShader.setUniform('uShowEdges', showEdges);
 
             // rect gives us some geometry on the screen
             rect(0, 0, width, height);
+
 
         }
 
