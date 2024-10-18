@@ -23,6 +23,12 @@ body {
     margin-right: 10px;
 }
 
+.warning {
+    display: none;
+    color: red;
+    margin-bottom: 20px;
+}
+
 input[type="checkbox"] {
     width: 30px;
     height: 30px;

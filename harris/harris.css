@@ -23,6 +23,12 @@ body {
     margin-right: 10px;
 }
 
+.warning {
+    display: none;
+    color: red;
+    margin-bottom: 20px;
+}
+
 canvas {
     margin-bottom: 30px;
 }
