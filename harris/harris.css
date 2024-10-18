@@ -29,6 +29,11 @@ h3 {
     margin-bottom: 0px;
 }
 
+input[type="checkbox"] {
+    width: 30px;
+    height: 30px;
+}
+
 input.slider {
     --c: orange;
     /* active color */
