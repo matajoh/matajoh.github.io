@@ -64,7 +64,7 @@ vec4 harrisEdges(
 
     if(h < threshold){
         // flat
-        return vec4(vec3(0.0, 0.0, 0.0), 1.0);
+        return vec4(vec3(grayscale(texture2D(image, uv))), 1.0);
     }
 
     // corner

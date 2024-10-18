@@ -103,7 +103,7 @@ vec4 harrisEdges(
 
     if(h &lt; threshold){
         // flat
-        return vec4(vec3(0.0, 0.0, 0.0), 1.0);
+        return vec4(vec3(grayscale(texture2D(image, uv))), 1.0);
     }
 
     // corner
@@ -182,7 +182,12 @@ void main() {
             createCanvas(width, height, WEBGL, canvas);
             noStroke();
 
-            cam = createCapture(VIDEO);
+            cam = createCapture({
+                "audio": false,
+                "video": {
+                    "facingMode": document.getElementById('source').value
+                }
+            });
             cam.size(width, height);
 
             cam.hide();
