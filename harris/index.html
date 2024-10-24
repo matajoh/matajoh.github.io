@@ -94,15 +94,14 @@ vec4 harrisEdges(
     float threshold
 ) {
     float h = response(image, uv, resolution);
-    if(h &lt; -0.025){
+    if(h &lt; -threshold){
         // edge
-        float strength = clamp(2.0 * (abs(h) - 0.025), 0.0, 1.0);
-        return vec4(vec3(strength, 0.0, 0.0), 1.0);
+        return vec4(0.0, 0.0, 0.0, 1.0);
     }
 
     if(h &lt; threshold){
         // flat
-        return vec4(vec3(grayscale(texture2D(image, uv))), 1.0);
+        return vec4(0.0, 0.0, 0.0, 1.0);
     }
 
     // corner
@@ -161,7 +160,7 @@ void main() {
         let width = 640;
         let height = 480;
 
-        if(location.protocol !== 'https:'){
+        if (location.protocol !== 'https:') {
             document.getElementById('https').style.display = 'block';
         }
 
@@ -209,7 +208,7 @@ void main() {
 
             const threshold = document.getElementById('threshold').value / 100.0;
             let flipped = document.getElementById('source').value === 'user';
-            if(document.getElementById('flipped').checked){
+            if (document.getElementById('flipped').checked) {
                 flipped = !flipped;
             }
 
@@ -217,11 +216,61 @@ void main() {
             theShader.setUniform('uResolution', [width, height]);
             theShader.setUniform('uThreshold', threshold);
             theShader.setUniform('uFlipped', flipped);
-
-            // rect gives us some geometry on the screen
             rect(0, 0, width, height);
+            resetShader();
 
+            loadPixels();
+            corners = []
+            const d = pixelDensity();
+            const depth = 4;
+            const scan = d * depth * width;
+            const num_pixels = height * scan;
+            const half_width = width / 2;
+            const half_height = height / 2;
+            for (let i = 0; i < num_pixels; i += d * depth) {
+                let r = 0;
+                let g = 0;
+                let b = 0;
 
+                if (d > 2) {
+                    for (let j = 0; j < d; j++) {
+                        for (let k = 0; k < d; k++) {
+                            const index = i + j * scan + k * depth;
+                            r += pixels[index];
+                            g += pixels[index + 1];
+                            b += pixels[index + 2];
+                        }
+                    }
+                    r /= d * d;
+                    g /= d * d;
+                    b /= d * d;
+                } else if (d == 2) {
+                    r = (pixels[i] + pixels[i + depth] + pixels[i + scan] + pixels[i + scan + depth]) / 4;
+                    g = (pixels[i + 1] + pixels[i + depth + 1] + pixels[i + scan + 1] + pixels[i + scan + depth + 1]) / 4;
+                    b = (pixels[i + 2] + pixels[i + depth + 2] + pixels[i + scan + 2] + pixels[i + scan + depth + 2]) / 4;
+                }
+                else {
+                    r = pixels[i];
+                    g = pixels[i + 1];
+                    b = pixels[i + 2];
+                }
+
+                if (r < 5 && g > 128 && b < 5) {
+                    const x = (i % scan) / (d * depth);
+                    const y = Math.floor(i / (d * scan));
+                    corners.push([x - half_width, y - half_height]);
+                }
+            }
+
+            updatePixels();
+
+            image(cam, -width/2, -height/2, width, height);
+            filter(GRAY);
+            fill(0, 255, 0);
+            stroke(0, 50, 0);
+            for (let c of corners) {
+                circle(c[0], c[1], 5 * d);
+            }
         }
 
         hljs.highlightAll();

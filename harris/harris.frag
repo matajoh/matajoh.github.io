@@ -56,15 +56,14 @@ vec4 harrisEdges(
     float threshold
 ) {
     float h = response(image, uv, resolution);
-    if(h < -0.025){
+    if(h < -threshold){
         // edge
-        float strength = clamp(2.0 * (abs(h) - 0.025), 0.0, 1.0);
-        return vec4(vec3(strength, 0.0, 0.0), 1.0);
+        return vec4(0, 0, 0, 1.0);
     }
 
     if(h < threshold){
         // flat
-        return vec4(vec3(grayscale(texture2D(image, uv))), 1.0);
+        return vec4(0, 0, 0, 1.0);
     }
 
     // corner
