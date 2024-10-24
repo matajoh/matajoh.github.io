@@ -102,14 +102,18 @@ void main() {
 - Perform exact localisation and supression
 
 
-So texture is 4*width and 2 * height
+So texture is 5*width and 2 * height
 Texture layout:
 
-AAAABBBBCCCCDDDD
-AAAABBBBCCCCDDDD
-AAAABBBBCCCCDDDD
-AAAABBBBCCCCDDDD
-EEEEFFGGHHII
-EEEEFFGGHHII
-EEEEKKLMNO
-EEEEKKP
+AAAABBBBCCCCDDDDEEEE
+AAAABBBBCCCCDDDDEEEE
+AAAABBBBCCCCDDDDEEEE
+AAAABBBBCCCCDDDDEEEE
+FFGGHHIIKK
+FFGGHHIIKK
+LMNOP
+
+
+when doing blurs, each texture coord references reads the one to the left when doing its calculations
+have to generate the vertices correctly but shouldn't be too bad
+the DOG can happen in one go, including non-max suppression
