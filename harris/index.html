@@ -94,10 +94,9 @@ vec4 harrisEdges(
     float threshold
 ) {
     float h = response(image, uv, resolution);
-    if(h &lt; -0.025){
+    if(h &lt; -threshold){
         // edge
-        float strength = clamp(2.0 * (abs(h) - 0.025), 0.0, 1.0);
-        return vec4(vec3(strength, 0.0, 0.0), 1.0);
+        return vec4(1.0, 0.0, 0.0, 1.0);
     }
 
     if(h &lt; threshold){
@@ -217,11 +216,34 @@ void main() {
             theShader.setUniform('uResolution', [width, height]);
             theShader.setUniform('uThreshold', threshold);
             theShader.setUniform('uFlipped', flipped);
-
-            // rect gives us some geometry on the screen
             rect(0, 0, width, height);
+            resetShader();
 
+            loadPixels();
+            corners = []
+            const d = pixelDensity();
+            const depth = 4;
+            const scan = d * depth * width;
+            const num_pixels = height * scan;
+            const half_width = width / 2;
+            const half_height = height / 2;
+            for(let i=0; i<num_pixels; i+=4){
+                const r = pixels[i];
+                const g = pixels[i+1];
+                const b = pixels[i+2];
+                const a = pixels[i+3];
+                if(r === 0 && g === 255 && b === 0){
+                    const x = (i % scan) / (d * depth);
+                    const y = Math.floor(i / (d * scan));
+                    corners.push([x - half_width, y - half_height]);
+                }
+            }
 
+            updatePixels();
+            fill(255, 0, 255);
+            for(let c of corners){
+                circle(c[0], c[1], 5 * d);
+            }
         }
 
         hljs.highlightAll();
