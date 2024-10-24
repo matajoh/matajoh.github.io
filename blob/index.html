@@ -1,0 +1,119 @@
+<html lang="en">
+
+<head>
+    <title>Blob Detection</title>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" type="text/css" href="blob.css" />
+    <link rel="stylesheet" href="scripts/styles/atom-one-dark.min.css">
+    <viewport content="width=device-width, initial-scale=1.0" />
+</head>
+
+<body>
+    <div class="container">
+        <h1>Blob Detection</h1>
+        <div class="controls">
+            <label for="threshold">Threshold:</label>
+            <input type="range" min="1" max="30" value="10" class="slider" id="threshold">
+        </div>
+        <div id="https" class="warning">
+            <p>Notice: the camera will not function if unless you connect via an HTTPS link.</p>
+        </div>
+        <canvas id="canvas"></canvas>
+        <div class="controls">
+            <label for="source">Camera</label>
+            <select id="source" onchange="switchCamera()" >
+                <option value="environment" selected="selected">Back</option>
+                <option value="user">Front</option>
+            </select>
+            <label for="flipped">Flipped</label>
+            <input type="checkbox" id="flipped">
+        </div>
+
+        <a href="blob.frag" target="_blank">Fragment Shader</a>
+    </div>
+
+    <script src="scripts/p5.min.js"></script>
+    <script src="scripts/highlight.min.js"></script>
+
+    <script>
+        let theShader;
+        let cam;
+        let width = 640;
+        let height = 480;
+
+        if(location.protocol !== 'https:') {
+            document.getElementById('https').style.display = 'block';
+        }
+
+        function preload() {
+            theShader = loadShader('blob.vert', 'blob.frag');
+        }
+
+        function setup() {
+            const isPortrait = window.matchMedia('(orientation: portrait)').matches;
+
+            if (isPortrait) {
+                width = 480;
+                height = 640;
+            }
+
+            canvas = document.getElementById('canvas');
+            createCanvas(width, height, WEBGL, canvas);
+            noStroke();
+
+            cam = createCapture({
+                "audio": false,
+                "video": {
+                    "facingMode": document.getElementById('source').value
+                }
+            });
+            cam.size(width, height);
+
+            cam.hide();
+        }
+
+        function switchCamera() {
+            cam.remove();
+            cam = createCapture({
+                "audio": false,
+                "video": {
+                    "facingMode": document.getElementById('source').value
+                }
+            });
+            cam.size(width, height);
+            cam.hide();
+        }
+
+        function draw() {
+            shader(theShader);
+
+            let strongThreshold = document.getElementById('threshold').value / 100;
+            let weakThreshold = strongThreshold * 0.7;
+            let flipped = document.getElementById('source').value === 'user';
+            if(document.getElementById('flipped').checked){
+                flipped = !flipped;
+            }
+
+            theShader.setUniform('uSampler', cam);
+            theShader.setUniform('uWeakThreshold', weakThreshold);
+            theShader.setUniform('uStrongThreshold', strongThreshold);
+            theShader.setUniform('uResolution', [width, height]);
+            theShader.setUniform('uFlipped', flipped);
+
+            // rect gives us some geometry on the screen
+            rect(0, 0, width, height);
+
+            /** Algorithm
+             * 1. Create scale-space pyramid. For each level:
+             *    - Compute per-pixel blur at multiple sigmas (store DoG value in pixels)
+             *    - Downsize image by 2 (manually)             * 
+             * 2. Provide the full pyramid to a second shader. This shader will:
+             *    - Determine the local a
+
+        }
+
+        hljs.highlightAll();
+    </script>
+</body>
+
+</html>
