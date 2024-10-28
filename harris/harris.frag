@@ -81,7 +81,6 @@ varying vec2 vTexCoord;
 void main() {
   vec2 uv = vTexCoord;
 
-  uv.y = 1.0 - uv.y;
   if(uFlipped){
     uv.x = 1.0 - uv.x;
   }

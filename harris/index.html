@@ -119,7 +119,6 @@ varying vec2 vTexCoord;
 void main() {
   vec2 uv = vTexCoord;
 
-  uv.y = 1.0 - uv.y;
   if(uFlipped){
     uv.x = 1.0 - uv.x;
   }
@@ -156,6 +155,7 @@ void main() {
 
     <script>
         let harrisShader;
+        let cornerBuffer;
         let cam;
         let width = 640;
         let height = 480;
@@ -179,6 +179,13 @@ void main() {
             canvas = document.getElementById('canvas');
             createCanvas(width, height, WEBGL, canvas);
             noStroke();
+
+            cornerBuffer = createFramebuffer({
+                "width": width,
+                "height": height,
+                "textureFiltering": NEAREST,
+                "density": 1
+            });
 
             cam = createCapture({
                 "audio": false,
@@ -204,6 +211,9 @@ void main() {
         }
 
         function draw() {
+            noStroke();
+            fill(255);
+
             shader(harrisShader);
 
             const threshold = document.getElementById('threshold').value / 100.0;
@@ -216,58 +226,45 @@ void main() {
             harrisShader.setUniform('uResolution', [width, height]);
             harrisShader.setUniform('uThreshold', threshold);
             harrisShader.setUniform('uFlipped', flipped);
-            rect(0, 0, width, height);
-            resetShader();
 
-            loadPixels();
+            cornerBuffer.begin();
+            rect(0, 0, width, height);
+            cornerBuffer.end();
+
+            cornerBuffer.loadPixels();
             corners = []
-            const d = pixelDensity();
             const depth = 4;
-            const scan = d * depth * width;
+            const scan = depth * width;
             const num_pixels = height * scan;
             const half_width = width / 2;
             const half_height = height / 2;
-            for (let i = 0; i < num_pixels; i += d * depth) {
-                let r = 0;
-                let g = 0;
-                let b = 0;
-
-                if (d > 2) {
-                    for (let j = 0; j < d; j++) {
-                        for (let k = 0; k < d; k++) {
-                            const index = i + j * scan + k * depth;
-                            r += pixels[index];
-                            g += pixels[index + 1];
-                            b += pixels[index + 2];
-                        }
-                    }
-                    r /= d * d;
-                    g /= d * d;
-                    b /= d * d;
-                } else if (d == 2) {
-                    r = (pixels[i] + pixels[i + depth] + pixels[i + scan] + pixels[i + scan + depth]) / 4;
-                    g = (pixels[i + 1] + pixels[i + depth + 1] + pixels[i + scan + 1] + pixels[i + scan + depth + 1]) / 4;
-                    b = (pixels[i + 2] + pixels[i + depth + 2] + pixels[i + scan + 2] + pixels[i + scan + depth + 2]) / 4;
-                }
-                else {
-                    r = pixels[i];
-                    g = pixels[i + 1];
-                    b = pixels[i + 2];
-                }
+            for (let i = 0; i < num_pixels; i += depth) {
+                const r = cornerBuffer.pixels[i];
+                const g = cornerBuffer.pixels[i + 1];
+                const b = cornerBuffer.pixels[i + 2];
 
                 if (r < 5 && g > 128 && b < 5) {
-                    const x = (i % scan) / (d * depth);
-                    const y = Math.floor(i / (d * scan));
+                    const x = (i % scan) / depth;
+                    const y = Math.floor(i / scan);
                     corners.push([x - half_width, y - half_height]);
                 }
             }
 
-            updatePixels();
+            resetShader();
+            const d = pixelDensity();
+            noStroke();
 
-            image(cam, -width/2, -height/2, width, height);
-            filter(GRAY);
+            if(flipped){
+                push();
+                scale(-1, 1);
+                image(cam, -width / 2, -height / 2, width, height);
+                pop();
+            }else{
+                image(cam, -width / 2, -height / 2, width, height);
+            }
             fill(0, 255, 0);
             stroke(0, 50, 0);
+            strokeWeight(d * 2);
             for (let c of corners) {
                 circle(c[0], c[1], 5 * d);
             }
