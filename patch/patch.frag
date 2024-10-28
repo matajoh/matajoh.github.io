@@ -48,6 +48,125 @@ vec4 rotatedPatch(vec2 uv)
   return texture2D(uCam, uv);
 }
 
+float histValue(int bin)
+{
+  if(bin < 0){
+    bin += 36;
+  }
+  if(bin >= 36){
+    bin -= 36;
+  }
+  if(bin == 0){
+    return uH0.r;
+  }
+  if(bin == 1){
+    return uH0.g;
+  }    
+  if(bin == 2){
+    return uH0.b;
+  }
+  if(bin == 3){
+    return uH0.a;
+  }
+  if(bin == 4){
+    return uH1.r;
+  }
+  if(bin == 5){
+    return uH1.g;
+  }
+  if(bin == 6){
+    return uH1.b;
+  }
+  if(bin == 7){
+    return uH1.a;
+  }
+  if(bin == 8){
+    return uH2.r;
+  }
+  if(bin == 9){
+    return uH2.g;
+  }
+  if(bin == 10){
+    return uH2.b;
+  }
+  if(bin == 11){
+    return uH2.a;
+  }
+  if(bin == 12){
+    return uH3.r;
+  }
+  if(bin == 13){
+    return uH3.g;
+  }
+  if(bin == 14){
+    return uH3.b;
+  }
+  if(bin == 15){
+    return uH3.a;
+  }
+  if(bin == 16){
+    return uH4.r;
+  }
+  if(bin == 17){
+    return uH4.g;
+  }
+  if(bin == 18){
+    return uH4.b;
+  }
+  if(bin == 19){
+    return uH4.a;
+  }
+  if(bin == 20){
+    return uH5.r;
+  }
+  if(bin == 21){
+    return uH5.g;
+  }
+  if(bin == 22){
+    return uH5.b;
+  }
+  if(bin == 23){
+    return uH5.a;
+  }
+  if(bin == 24){
+    return uH6.r;
+  }
+  if(bin == 25){
+    return uH6.g;
+  }
+  if(bin == 26){
+    return uH6.b;
+  }
+  if(bin == 27){
+    return uH6.a;
+  }
+  if(bin == 28){
+    return uH7.r;
+  }
+  if(bin == 29){
+    return uH7.g;
+  }
+  if(bin == 30){
+    return uH7.b;
+  }
+  if(bin == 31){
+    return uH7.a;
+  }
+  if(bin == 32){
+    return uH8.r;
+  }
+  if(bin == 33){
+    return uH8.g;
+  }
+  if(bin == 34){
+    return uH8.b;
+  }
+  if(bin == 35){
+    return uH8.a;
+  }
+  return 0.0;
+}
+
 void main() {
   vec2 uv = vTexCoord;
 
@@ -80,88 +199,18 @@ void main() {
   }else{
     uv.y = uv.y - v_div;
     int bin = int(uv.x * 36.0);
-    
-    float value;
-    if(bin == 0){
-      value = uH0.r;
-    }else if(bin == 1){
-      value = uH0.g;
-    }else if(bin == 2){
-      value = uH0.b;
-    }else if(bin == 3){
-      value = uH0.a;
-    }else if(bin == 4){
-      value = uH1.r;
-    }else if(bin == 5){
-      value = uH1.g;
-    }else if(bin == 6){
-      value = uH1.b;
-    }else if(bin == 7){
-      value = uH1.a;
-    }else if(bin == 8){
-      value = uH2.r;
-    }else if(bin == 9){
-      value = uH2.g;
-    }else if(bin == 10){
-      value = uH2.b;
-    }else if(bin == 11){
-      value = uH2.a;
-    }else if(bin == 12){
-      value = uH3.r;
-    }else if(bin == 13){
-      value = uH3.g;
-    }else if(bin == 14){
-      value = uH3.b;
-    }else if(bin == 15){
-      value = uH3.a;
-    }else if(bin == 16){
-      value = uH4.r;
-    }else if(bin == 17){
-      value = uH4.g;
-    }else if(bin == 18){
-      value = uH4.b;
-    }else if(bin == 19){
-      value = uH4.a;
-    }else if(bin == 20){
-      value = uH5.r;
-    }else if(bin == 21){
-      value = uH5.g;
-    }else if(bin == 22){
-      value = uH5.b;
-    }else if(bin == 23){
-      value = uH5.a;
-    }else if(bin == 24){
-      value = uH6.r;
-    } else if(bin == 25){
-      value = uH6.g;
-    }else if(bin == 26){
-      value = uH6.b;
-    }else if(bin == 27){
-      value = uH6.a;
-    }else if(bin == 28){
-      value = uH7.r;
-    }else if(bin == 29){
-      value = uH7.g;
-    }else if(bin == 30){
-      value = uH7.b;
-    }else if(bin == 31){
-      value = uH7.a;
-    }else if(bin == 32){
-      value = uH8.r;
-    }else if(bin == 33){
-      value = uH8.g;
-    }else if(bin == 34){
-      value = uH8.b;
-    }else if(bin == 35){
-      value = uH8.a;
-    }
-
+    float value = histValue(bin);
     float binDiv = (1.0 - v_div) * (1.0 - value);
     if(uv.y < binDiv){
       gl_FragColor = vec4(vec3(1.0), 1.0);
     }else{
+      float maxPeak = histValue(uOrientation);
+      float lhs = histValue(bin - 1);
+      float rhs = histValue(bin + 1);
       if(bin == uOrientation){
         gl_FragColor = vec4(vec3(1.0, 0.0, 0.0), 1.0);
+      }else if(value > lhs && value > rhs && value > 0.8 * maxPeak){ 
+        gl_FragColor = vec4(vec3(0.0, 1.0, 0.0), 1.0);
       }else{
         gl_FragColor = vec4(vec3(0.0), 1.0);
       }

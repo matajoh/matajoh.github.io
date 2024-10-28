@@ -34,6 +34,13 @@
             <label for="flipped">Flipped</label>
             <input type="checkbox" id="flipped">
         </div>
+        <div class="controls">
+            <label for="debugImage">Debug Image</label>
+            <input type="checkbox" id="debugImage">
+        </div>
+        <div id="debug">
+
+        </div>
 
         <a href="pyramid.frag" target="_blank">Pyramid Shader</a>
         <a href="dog.frag" target="_blank">DoG Shader</a>
@@ -85,7 +92,7 @@
                 cameraHeight = 640;
             }
 
-            //debugImg = loadImage('polkadots.png');
+            debugImg = loadImage('polkadots.png');
 
             bufferWidth = cameraWidth * 5;
             bufferHeight = cameraHeight;
@@ -109,7 +116,6 @@
             extremaBuffers = [];
             for (let level = 0; level < numLevels; level++) {
                 const options = {
-                    "format": FLOAT,
                     "width": bufferWidth / Math.pow(2, level),
                     "height": bufferHeight / Math.pow(2, level),
                     "textureFiltering": LINEAR,
@@ -119,7 +125,6 @@
                 pyramidBuffers0.push(createFramebuffer(options));
                 pyramidBuffers1.push(createFramebuffer(options));
                 dogBuffers.push(createFramebuffer({
-                    "format": FLOAT,
                     "width": dogWidth / Math.pow(2, level),
                     "height": dogHeight / Math.pow(2, level),
                     "textureFiltering": LINEAR,
@@ -127,7 +132,6 @@
                 }))
 
                 extremaBuffers.push(createFramebuffer({
-                    "format": FLOAT,
                     "width": extremaWidth / Math.pow(2, level),
                     "height": extremaHeight / Math.pow(2, level),
                     "textureFiltering": NEAREST,
@@ -164,6 +168,8 @@
                 flipped = !flipped;
             }
 
+            let debugMode = document.getElementById('debugImage').checked;
+
             noStroke();
             fill(255);
 
@@ -175,7 +181,11 @@
             pyramidShader.setUniform('uResolution', [cameraWidth, cameraHeight]);
             pyramidShader.setUniform('uLevel', 0);
             pyramidShader.setUniform('uPass', -1);
-            pyramidShader.setUniform('uSampler', cam);
+            if (debugMode) {
+                pyramidShader.setUniform('uSampler', debugImg);
+            } else {
+                pyramidShader.setUniform('uSampler', cam);
+            }
 
             pyramidBuffers1[0].begin()
             rect(0, 0, bufferWidth, bufferHeight);
@@ -238,11 +248,9 @@
             // the middle two images.
             sigmas = [2.2627416997969525, 3.2]
             features = [];
-            let r_avg = 0;
-            let g_avg = 0;
-            let b_avg = 0;
             let totalPixels = 0;
             let numFeatures = 0;
+            let check_sum = 0;
             let threshold = document.getElementById('threshold').value;
             threshold = threshold * 0.001;
             extremaShader.setUniform("uThreshold", threshold);
@@ -269,23 +277,17 @@
                 totalPixels += num_pixels / 4;
                 for (let i = 0; i < num_pixels; i += depth) {
                     const abs_x = (i % scan) / depth;
-                    const y = Math.floor(i / scan);
-                    const x = abs_x % halfLevelWidth;
+                    let y = Math.floor(i / scan);
+                    let x = abs_x % halfLevelWidth;
 
-                    if(x < 3 || y < 3 || x >= halfLevelWidth - 3 || y >= levelHeight - 3) {
+                    if (x < 3 || y < 3 || x >= halfLevelWidth - 3 || y >= levelHeight - 3) {
                         continue;
                     }
 
-                    const r = levelBuffer.pixels[i];
-                    const g = levelBuffer.pixels[i + 1];
-                    const b = levelBuffer.pixels[i + 2];
-                    const a = levelBuffer.pixels[i + 3];
+                    const check = levelBuffer.pixels[i];
+                    check_sum += check;
 
-                    r_avg += r;
-                    g_avg += g;
-                    b_avg += b;
-
-                    if (r < 0.1 && g < 0.1 && b < 0.1) {
+                    if (check < 0.5) {
                         continue;
                     }
 
@@ -294,15 +296,22 @@
                     numFeatures++;
                     const scale = Math.pow(2, level);
 
-                    features.push([x * scale - halfWidth, y * scale - halfHeight, sigmas[s] * scale]);
+                    features.push([x * scale - halfWidth, y * scale - halfHeight, sigmas[s] * scale, level]);
                 }
             }
+
+            const debug = document.getElementById('debug');
+            debug.innerHTML = `Features: ${numFeatures}`;
 
             let mode = document.getElementById('mode').value;
             shader(blobShader);
             blobShader.setUniform('uMode', mode);
             blobShader.setUniform('uFlipped', flipped);
-            blobShader.setUniform('uCam', cam);
+            if (debugMode) {
+                blobShader.setUniform('uCam', debugImg);
+            } else {
+                blobShader.setUniform('uCam', cam);
+            }
             blobShader.setUniform('uPyramid0', pyramidBuffers0[0]);
             blobShader.setUniform('uPyramid1', pyramidBuffers0[1]);
             blobShader.setUniform('uPyramid2', pyramidBuffers0[2]);
@@ -327,10 +336,21 @@
                 loadPixels();
                 updatePixels();
                 noFill();
-                stroke(255, 0, 0);
                 strokeWeight(2);
                 for (let i = 0; i < features.length; i++) {
                     const f = features[i];
+                    const level = f[3];
+                    if (level == 0) {
+                        stroke(255, 0, 255);
+                    } else if (level == 1) {
+                        stroke(255, 255, 0);
+                    } else if (level == 2) {
+                        stroke(0, 0, 255);
+                    } else if (level == 3) {
+                        stroke(0, 255, 0);
+                    } else if (level == 4) {
+                        stroke(255, 0, 0);
+                    }
                     circle(f[0], f[1], 2 * f[2] * d);
                 }
             }

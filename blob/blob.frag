@@ -1,4 +1,4 @@
-precision mediump float;
+precision highp float;
 
 uniform int uMode;
 uniform bool uFlipped;
@@ -69,15 +69,24 @@ vec4 getPyramidColor(vec2 uv, float x_size, sampler2D level0, sampler2D level1, 
   }
 }
 
+float unpack(vec4 color)
+{
+  float r = color.r * 16711680.0;
+  float g = color.g * 65280.0;
+  float b = color.b * 255.0;
+  return clamp(float(r + g + b) / 16777215.0, 0.0, 1.0);
+}
+
 vec4 getScaleSpaceColor(vec2 uv){
-  return getPyramidColor(uv, 1.0, uPyramid0, uPyramid1, uPyramid2, uPyramid3, uPyramid4);
+  vec4 color = getPyramidColor(uv, 1.0, uPyramid0, uPyramid1, uPyramid2, uPyramid3, uPyramid4);
+  float value = unpack(color);
+  return vec4(vec3(value), 1.0);
 }
 
 vec4 getDoGColor(vec2 uv){
-  vec4 dog = getPyramidColor(uv, 0.8, uDoG0, uDoG1, uDoG2, uDoG3, uDoG4);
-  vec3 rgb = dog.rgb;
-  rgb = (rgb - 0.5) * 4.0 + 0.5;
-  return vec4(rgb, 1.0);
+  float dog = unpack(getPyramidColor(uv, 0.8, uDoG0, uDoG1, uDoG2, uDoG3, uDoG4));
+  dog = clamp((dog - 0.5) * 2.0 + 0.5, 0.0, 1.0);
+  return vec4(vec3(dog), 1.0);
 }
 
 void main() {
