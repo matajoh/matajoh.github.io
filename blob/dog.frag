@@ -14,5 +14,7 @@ void main() {
     vec3 g1 = texture2D(uSampler, uv1).rgb;
     vec3 dog = g1 - g0;
     
+    dog = 0.5 + 0.5 * dog;
+
     gl_FragColor = vec4(dog, 1.0);
 }

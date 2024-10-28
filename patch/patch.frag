@@ -61,15 +61,20 @@ void main() {
   if(uv.y < v_div){
     uv.y = uv.y / v_div;
     float h_div = uResolution.x / width;
-    if(uFlipped){
-      uv.x = 1.0 - uv.x;
-    }
 
     if(uv.x < h_div){
       uv.x = (uv.x / h_div);
+      if(uFlipped){
+        uv.x = 1.0 - uv.x;
+      }
+
       gl_FragColor = maskedPatch(uv);
     }else{
       uv.x = (uv.x - h_div) * 2.0;
+      if(uFlipped){
+        uv.x = 1.0 - uv.x;
+      }
+
       gl_FragColor = rotatedPatch(uv);
     }
   }else{

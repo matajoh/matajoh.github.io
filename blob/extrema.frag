@@ -7,7 +7,8 @@ uniform vec2 uResolution;
 varying vec2 vTexCoord;
 
 float dog(vec2 uv){
-    return texture2D(uSampler, uv).r;
+    float dog = texture2D(uSampler, uv).r;
+    return (dog - 0.5) * 2.0;
 }
 
 bool is_minimum(vec2 center, float value, bool omit_center) {
