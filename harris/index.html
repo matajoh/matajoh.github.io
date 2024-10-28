@@ -155,7 +155,7 @@ void main() {
     <script src="scripts/highlight.min.js"></script>
 
     <script>
-        let theShader;
+        let harrisShader;
         let cam;
         let width = 640;
         let height = 480;
@@ -165,7 +165,7 @@ void main() {
         }
 
         function preload() {
-            theShader = loadShader('harris.vert', 'harris.frag');
+            harrisShader = loadShader('harris.vert', 'harris.frag');
         }
 
         function setup() {
@@ -204,7 +204,7 @@ void main() {
         }
 
         function draw() {
-            shader(theShader);
+            shader(harrisShader);
 
             const threshold = document.getElementById('threshold').value / 100.0;
             let flipped = document.getElementById('source').value === 'user';
@@ -212,10 +212,10 @@ void main() {
                 flipped = !flipped;
             }
 
-            theShader.setUniform('uSampler', cam);
-            theShader.setUniform('uResolution', [width, height]);
-            theShader.setUniform('uThreshold', threshold);
-            theShader.setUniform('uFlipped', flipped);
+            harrisShader.setUniform('uSampler', cam);
+            harrisShader.setUniform('uResolution', [width, height]);
+            harrisShader.setUniform('uThreshold', threshold);
+            harrisShader.setUniform('uFlipped', flipped);
             rect(0, 0, width, height);
             resetShader();
 
