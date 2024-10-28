@@ -1,0 +1,192 @@
+<html lang="en">
+
+<head>
+    <title>Patch Histogram</title>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" type="text/css" href="patch.css" />
+    <link rel="stylesheet" href="scripts/styles/atom-one-dark.min.css">
+    <viewport content="width=device-width, initial-scale=1.0" />
+</head>
+
+<body>
+    <div class="container">
+        <h1>Patch Histogram</h1>
+        <div id="https" class="warning">
+            <p>Notice: the camera will not function if unless you connect via an HTTPS link.</p>
+        </div>
+        <canvas id="canvas"></canvas>
+        <div class="controls">
+            <label for="source">Camera</label>
+            <select id="source" onchange="switchCamera()">
+                <option value="environment" selected="selected">Back</option>
+                <option value="user">Front</option>
+            </select>
+            <label for="flipped">Flipped</label>
+            <input type="checkbox" id="flipped">
+        </div>
+    </div>
+
+    <script src="scripts/p5.min.js"></script>
+    <script src="scripts/highlight.min.js"></script>
+
+    <script>
+
+        let gradientShader;
+        let patchShader;
+        let gradientBuffer;
+        let histogramBuffer;
+        const patchSize = 256;
+        const histSize = 150;
+
+        let cam;
+        let cameraWidth = 640;
+        let cameraHeight = 480;
+        let canvasWidth;
+        let canvasHeight;
+
+        if (location.protocol !== 'https:') {
+            document.getElementById('https').style.display = 'block';
+        }
+
+        function preload() {
+            gradientShader = loadShader('gradient.vert', 'gradient.frag');
+            patchShader = loadShader('patch.vert', 'patch.frag');
+        }
+
+        function setup() {
+            const isPortrait = window.matchMedia('(orientation: portrait)').matches;
+
+            if (isPortrait) {
+                cameraWidth = 480;
+                cameraHeight = 640;
+            }
+
+            let canvasWidth = cameraWidth + cameraHeight;
+            let canvasHeight = cameraHeight + histSize;
+
+            canvas = document.getElementById('canvas');
+            createCanvas(canvasWidth, canvasHeight, WEBGL, canvas);
+            noStroke();
+
+            gradientBuffer = createFramebuffer({
+                "format": FLOAT,
+                "width": patchSize,
+                "height": patchSize,
+                "textureFiltering": NEAREST,
+                "density": 1
+            });
+
+            cam = createCapture({
+                "audio": false,
+                "video": {
+                    "facingMode": document.getElementById('source').value
+                }
+            });
+            cam.size(cameraWidth, cameraHeight);
+
+            cam.hide();
+        }
+
+        function switchCamera() {
+            cam.remove();
+            cam = createCapture({
+                "audio": false,
+                "video": {
+                    "facingMode": document.getElementById('source').value
+                }
+            });
+            cam.size(cameraWidth, cameraHeight);
+            cam.hide();
+        }
+
+        function draw() {
+            let flipped = document.getElementById('source').value === 'user';
+            if (document.getElementById('flipped').checked) {
+                flipped = !flipped;
+            }
+
+            shader(gradientShader);
+
+            gradientShader.setUniform('uSampler', cam);
+            gradientShader.setUniform('uResolution', [cameraWidth, cameraHeight]);
+            gradientShader.setUniform('uPatchSize', [patchSize, patchSize]);
+            gradientShader.setUniform('uFlipped', flipped);
+
+            gradientBuffer.begin();
+            rect(0, 0, patchSize, patchSize);
+            gradientBuffer.end();
+
+            gradientBuffer.loadPixels();
+
+            const depth = 4;
+            const scan = patchSize * depth;
+            const num_pixels = scan * patchSize;
+            const sigma = patchSize / 6;
+            const center = patchSize / 2;
+            const weightFactor = -0.5 / (sigma ** 2);
+            let rawHistogram = Array(36);
+
+            for(let i=0; i<num_pixels; i += depth){
+                const x = (i % scan) / depth;
+                const y = Math.floor(i / scan);
+                const weight = Math.exp(weightFactor * ((x - center) ** 2 + (y - center) ** 2));
+                const mag = gradientBuffer.pixels[i];
+                const rad = gradientBuffer.pixels[i+1];
+                let deg = rad * 180 / Math.PI;
+                if(deg < 0){
+                    deg += 360;
+                }
+
+                const bin = Math.floor(deg / 10);
+                if(rawHistogram[bin] === undefined){
+                    rawHistogram[bin] = 0;
+                }
+
+                rawHistogram[bin] += weight * mag;
+            }
+
+            let histogram = Array(36);
+            let orientationMax = 0;
+            let dominiantOrientation = 0;
+            for(let i=0; i<36; i++){
+                histogram[i] = 6 * rawHistogram[i];
+                histogram[i] += 4 * (rawHistogram.at(i - 1) + rawHistogram.at((i + 1) % 36));
+                histogram[i] += rawHistogram.at(i - 2) + rawHistogram.at((i + 2) % 36);
+                histogram[i] /= 16;
+                if(histogram[i] > orientationMax){
+                    orientationMax = histogram[i];
+                    dominiantOrientation = i;
+                }
+            }
+
+            for(let i=0; i<36; i++){
+                histogram[i] = histogram[i] / orientationMax;
+            }
+
+            shader(patchShader);
+
+            patchShader.setUniform('uFlipped', flipped);            
+            patchShader.setUniform('uCam', cam);
+            patchShader.setUniform('uPatch', gradientBuffer);
+            patchShader.setUniform('uResolution', [cameraWidth, cameraHeight]);
+            patchShader.setUniform('uPatchSize', [patchSize, patchSize]);
+            patchShader.setUniform('uHistogramSize', histSize);
+            patchShader.setUniform('uOrientation', dominiantOrientation);
+            patchShader.setUniform('uH0', [histogram[0], histogram[1], histogram[2], histogram[3]]);
+            patchShader.setUniform('uH1', [histogram[4], histogram[5], histogram[6], histogram[7]]);
+            patchShader.setUniform('uH2', [histogram[8], histogram[9], histogram[10], histogram[11]]);
+            patchShader.setUniform('uH3', [histogram[12], histogram[13], histogram[14], histogram[15]]);
+            patchShader.setUniform('uH4', [histogram[16], histogram[17], histogram[18], histogram[19]]);
+            patchShader.setUniform('uH5', [histogram[20], histogram[21], histogram[22], histogram[23]]);
+            patchShader.setUniform('uH6', [histogram[24], histogram[25], histogram[26], histogram[27]]);
+            patchShader.setUniform('uH7', [histogram[28], histogram[29], histogram[30], histogram[31]]);
+            patchShader.setUniform('uH8', [histogram[32], histogram[33], histogram[34], histogram[35]]);            
+
+            rect(0, 0, canvasWidth, canvasHeight);
+        }
+
+        hljs.highlightAll();
+    </script>
+</body>
+
+</html>

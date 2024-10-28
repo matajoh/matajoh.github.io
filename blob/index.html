@@ -1,0 +1,343 @@
+<html lang="en">
+
+<head>
+    <title>Blob Detection</title>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" type="text/css" href="blob.css" />
+    <link rel="stylesheet" href="scripts/styles/atom-one-dark.min.css">
+    <viewport content="width=device-width, initial-scale=1.0" />
+</head>
+
+<body>
+    <div class="container">
+        <h1>Blob Detection</h1>
+        <div class="controls">
+            <label for="threshold">Threshold:</label>
+            <input type="range" min="1" max="50" value="10" class="slider" id="threshold">
+        </div>
+        <div id="https" class="warning">
+            <p>Notice: the camera will not function if unless you connect via an HTTPS link.</p>
+        </div>
+        <canvas id="canvas"></canvas>
+        <div class="controls">
+            <label for="mode">Mode</label>
+            <select id="mode">
+                <option value="0" selected="selected">Features</option>
+                <option value="1">Image Pyramid</option>
+                <option value="2">Difference-of-Gaussian</option>
+            </select>
+            <label for="source">Camera</label>
+            <select id="source" onchange="switchCamera()">
+                <option value="environment" selected="selected">Back</option>
+                <option value="user">Front</option>
+            </select>
+            <label for="flipped">Flipped</label>
+            <input type="checkbox" id="flipped">
+        </div>
+
+        <a href="pyramid.frag" target="_blank">Pyramid Shader</a>
+        <a href="dog.frag" target="_blank">DoG Shader</a>
+        <a href="extrema.frag" target="_blank">Extrema Shader</a>
+    </div>
+
+    <script src="scripts/p5.min.js"></script>
+    <script src="scripts/highlight.min.js"></script>
+
+    <script>
+        let blobShader;
+        let pyramidShader;
+        let dogShader;
+        let extremaShader;
+        let cam;
+        let pyramidBuffers0;
+        let pyramidBuffers1;
+        let dogBuffers;
+        let extremaBuffers;
+        let cameraWidth = 640;
+        let cameraHeight = 480;
+        let bufferWidth;
+        let bufferHeight;
+        let dogWidth;
+        let dogHeight;
+        let extremaWidth;
+        let extremaHeight;
+        let canvasWidth;
+        let canvasHeight;
+        let debugImg;
+        const numLevels = 5;
+
+        if (location.protocol !== 'https:') {
+            document.getElementById('https').style.display = 'block';
+        }
+
+        function preload() {
+            blobShader = loadShader('blob.vert', 'blob.frag');
+            dogShader = loadShader('dog.vert', 'dog.frag');
+            pyramidShader = loadShader('pyramid.vert', 'pyramid.frag');
+            extremaShader = loadShader('extrema.vert', 'extrema.frag');
+        }
+
+        function setup() {
+            const isPortrait = window.matchMedia('(orientation: portrait)').matches;
+
+            if (isPortrait) {
+                cameraWidth = 480;
+                cameraHeight = 640;
+            }
+
+            //debugImg = loadImage('polkadots.png');
+
+            bufferWidth = cameraWidth * 5;
+            bufferHeight = cameraHeight;
+            dogWidth = cameraWidth * 4;
+            dogHeight = cameraHeight;
+            extremaWidth = cameraWidth * 2;
+            extremaHeight = cameraHeight;
+
+            const cameraRatio = cameraHeight / cameraWidth;
+            const bufferRatio = bufferHeight / bufferWidth;
+            canvasWidth = 1200;
+            canvasHeight = cameraHeight;
+
+            canvas = document.getElementById('canvas');
+            createCanvas(canvasWidth, canvasHeight, WEBGL, canvas);
+            noStroke();
+
+            pyramidBuffers0 = [];
+            pyramidBuffers1 = [];
+            dogBuffers = [];
+            extremaBuffers = [];
+            for (let level = 0; level < numLevels; level++) {
+                const options = {
+                    "format": FLOAT,
+                    "width": bufferWidth / Math.pow(2, level),
+                    "height": bufferHeight / Math.pow(2, level),
+                    "textureFiltering": LINEAR,
+                    "density": 1
+                }
+
+                pyramidBuffers0.push(createFramebuffer(options));
+                pyramidBuffers1.push(createFramebuffer(options));
+                dogBuffers.push(createFramebuffer({
+                    "format": FLOAT,
+                    "width": dogWidth / Math.pow(2, level),
+                    "height": dogHeight / Math.pow(2, level),
+                    "textureFiltering": LINEAR,
+                    "density": 1
+                }))
+
+                extremaBuffers.push(createFramebuffer({
+                    "format": FLOAT,
+                    "width": extremaWidth / Math.pow(2, level),
+                    "height": extremaHeight / Math.pow(2, level),
+                    "textureFiltering": NEAREST,
+                    "density": 1
+                }))
+            }
+
+            cam = createCapture({
+                "audio": false,
+                "video": {
+                    "facingMode": document.getElementById('source').value
+                }
+            });
+            cam.size(cameraWidth, cameraHeight);
+
+            cam.hide();
+        }
+
+        function switchCamera() {
+            cam.remove();
+            cam = createCapture({
+                "audio": false,
+                "video": {
+                    "facingMode": document.getElementById('source').value
+                }
+            });
+            cam.size(cameraWidth, cameraHeight);
+            cam.hide();
+        }
+
+        function draw() {
+            let flipped = document.getElementById('source').value === 'user';
+            if (document.getElementById('flipped').checked) {
+                flipped = !flipped;
+            }
+
+            noStroke();
+            fill(255);
+
+            // build the image pyramid
+            shader(pyramidShader);
+            pyramidShader.setUniform('uFlipped', flipped);
+
+            // initialize the pyramid
+            pyramidShader.setUniform('uResolution', [cameraWidth, cameraHeight]);
+            pyramidShader.setUniform('uLevel', 0);
+            pyramidShader.setUniform('uPass', -1);
+            pyramidShader.setUniform('uSampler', cam);
+
+            pyramidBuffers1[0].begin()
+            rect(0, 0, bufferWidth, bufferHeight);
+            pyramidBuffers1[0].end();
+
+            let previous = pyramidBuffers1[0];
+            for (let level = 0; level < numLevels; level++) {
+                const front = pyramidBuffers0[level];
+                const back = pyramidBuffers1[level];
+                const levelWidth = pyramidBuffers0[level].width;
+                const levelHeight = pyramidBuffers0[level].height;
+
+                pyramidShader.setUniform('uLevel', level);
+                pyramidShader.setUniform('uResolution', [levelWidth, levelHeight]);
+
+                // pass 0
+                pyramidShader.setUniform('uPass', 0);
+                pyramidShader.setUniform('uSampler', previous);
+
+                front.begin();
+                rect(0, 0, bufferWidth, bufferHeight);
+                front.end();
+
+                // pass 1
+                pyramidShader.setUniform('uPass', 1);
+                pyramidShader.setUniform('uSampler', front);
+
+                back.begin();
+                rect(0, 0, bufferWidth, bufferHeight);
+                back.end();
+
+                // pass 2
+                pyramidShader.setUniform('uPass', 2);
+                pyramidShader.setUniform('uSampler', back);
+
+                front.begin();
+                rect(0, 0, bufferWidth, bufferHeight);
+                front.end();
+
+                previous = front;
+            }
+
+            shader(dogShader);
+
+            for (let level = 0; level < numLevels; level++) {
+                dogShader.setUniform("uSampler", pyramidBuffers0[level]);
+
+                dogBuffers[level].begin();
+                rect(0, 0, dogWidth, dogHeight);
+                dogBuffers[level].end();
+            }
+
+            shader(extremaShader);
+
+            // interval sigmas are
+            // 1.6, 2.26, 3.2, 4.5, 6.4
+            // which means the DoGs are:
+            // 1.6, 2.26, 3.2, 4.5
+            // and the features are detected from
+            // the middle two images.
+            sigmas = [2.2627416997969525, 3.2]
+            features = [];
+            let r_avg = 0;
+            let g_avg = 0;
+            let b_avg = 0;
+            let totalPixels = 0;
+            let numFeatures = 0;
+            let threshold = document.getElementById('threshold').value;
+            threshold = threshold * 0.001;
+            extremaShader.setUniform("uThreshold", threshold);
+            for (let level = 0; level < numLevels; level++) {
+                const dogBuffer = dogBuffers[level];
+                const levelBuffer = extremaBuffers[level];
+                const levelWidth = levelBuffer.width;
+                const levelHeight = levelBuffer.height;
+                const halfLevelWidth = levelWidth / 2;
+
+                extremaShader.setUniform("uSampler", dogBuffer);
+                extremaShader.setUniform("uResolution", [dogBuffer.width, dogBuffer.height]);
+
+                levelBuffer.begin();
+                rect(0, 0, levelWidth, levelHeight);
+                levelBuffer.end();
+
+                levelBuffer.loadPixels();
+                const depth = 4;
+                const scan = depth * levelWidth;
+                const num_pixels = levelHeight * scan;
+                const halfWidth = cameraWidth / 2;
+                const halfHeight = cameraHeight / 2;
+                totalPixels += num_pixels / 4;
+                for (let i = 0; i < num_pixels; i += depth) {
+                    const abs_x = (i % scan) / depth;
+                    const y = Math.floor(i / scan);
+                    const x = abs_x % halfLevelWidth;
+
+                    if(x < 3 || y < 3 || x >= halfLevelWidth - 3 || y >= levelHeight - 3) {
+                        continue;
+                    }
+
+                    const r = levelBuffer.pixels[i];
+                    const g = levelBuffer.pixels[i + 1];
+                    const b = levelBuffer.pixels[i + 2];
+                    const a = levelBuffer.pixels[i + 3];
+
+                    r_avg += r;
+                    g_avg += g;
+                    b_avg += b;
+
+                    if (r < 0.1 && g < 0.1 && b < 0.1) {
+                        continue;
+                    }
+
+                    const s = abs_x > halfLevelWidth ? 1 : 0;
+
+                    numFeatures++;
+                    const scale = Math.pow(2, level);
+
+                    features.push([x * scale - halfWidth, y * scale - halfHeight, sigmas[s] * scale]);
+                }
+            }
+
+            let mode = document.getElementById('mode').value;
+            shader(blobShader);
+            blobShader.setUniform('uMode', mode);
+            blobShader.setUniform('uFlipped', flipped);
+            blobShader.setUniform('uCam', cam);
+            blobShader.setUniform('uPyramid0', pyramidBuffers0[0]);
+            blobShader.setUniform('uPyramid1', pyramidBuffers0[1]);
+            blobShader.setUniform('uPyramid2', pyramidBuffers0[2]);
+            blobShader.setUniform('uPyramid3', pyramidBuffers0[3]);
+            blobShader.setUniform('uPyramid4', pyramidBuffers0[4]);
+            blobShader.setUniform('uDoG0', dogBuffers[0]);
+            blobShader.setUniform('uDoG1', dogBuffers[1]);
+            blobShader.setUniform('uDoG2', dogBuffers[2]);
+            blobShader.setUniform('uDoG3', dogBuffers[3]);
+            blobShader.setUniform('uDoG4', dogBuffers[4]);
+            blobShader.setUniform('uCameraSize', [cameraWidth / canvasWidth, cameraHeight / canvasHeight]);
+            blobShader.setUniform('uBufferSize', [1.0, (bufferHeight * canvasWidth) / (bufferWidth * canvasHeight)]);
+
+            // rect gives us some geometry on the screen
+            rect(0, 0, canvasWidth, canvasHeight);
+
+            if (mode == 0) {
+                resetShader();
+
+                const d = pixelDensity();
+
+                loadPixels();
+                updatePixels();
+                noFill();
+                stroke(255, 0, 0);
+                strokeWeight(2);
+                for (let i = 0; i < features.length; i++) {
+                    const f = features[i];
+                    circle(f[0], f[1], 2 * f[2] * d);
+                }
+            }
+        }
+
+        hljs.highlightAll();
+    </script>
+</body>
+
+</html>

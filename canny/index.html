@@ -160,7 +160,7 @@ void main() {
     <script src="scripts/highlight.min.js"></script>
 
     <script>
-        let theShader;
+        let cannyShader;
         let cam;
         let width = 640;
         let height = 480;
@@ -170,7 +170,7 @@ void main() {
         }
 
         function preload() {
-            theShader = loadShader('canny.vert', 'canny.frag');
+            cannyShader = loadShader('canny.vert', 'canny.frag');
         }
 
         function setup() {
@@ -209,7 +209,7 @@ void main() {
         }
 
         function draw() {
-            shader(theShader);
+            shader(cannyShader);
 
             let strongThreshold = document.getElementById('threshold').value / 100;
             let weakThreshold = strongThreshold * 0.7;
@@ -218,11 +218,11 @@ void main() {
                 flipped = !flipped;
             }
 
-            theShader.setUniform('uSampler', cam);
-            theShader.setUniform('uWeakThreshold', weakThreshold);
-            theShader.setUniform('uStrongThreshold', strongThreshold);
-            theShader.setUniform('uResolution', [width, height]);
-            theShader.setUniform('uFlipped', flipped);
+            cannyShader.setUniform('uSampler', cam);
+            cannyShader.setUniform('uWeakThreshold', weakThreshold);
+            cannyShader.setUniform('uStrongThreshold', strongThreshold);
+            cannyShader.setUniform('uResolution', [width, height]);
+            cannyShader.setUniform('uFlipped', flipped);
 
             // rect gives us some geometry on the screen
             rect(0, 0, width, height);

@@ -1,0 +1,113 @@
+body {
+    font-family: sans-serif;
+}
+
+.container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 800px;
+    margin-left: auto;
+    margin-right: auto;    
+}
+
+.controls {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 20px;
+}
+
+.controls label {
+    margin-left: 20px;
+    margin-right: 10px;
+}
+
+.warning {
+    display: none;
+    color: red;
+    margin-bottom: 20px;
+}
+
+input[type="checkbox"] {
+    width: 30px;
+    height: 30px;
+}
+
+select {
+    height: 30px;
+    font-size: 16px;
+}
+
+canvas {
+    margin-bottom: 30px;
+}
+
+h3 {
+    margin-top: 20px;
+    margin-bottom: 0px;
+}
+
+input.slider {
+    --c: orange;
+    /* active color */
+    --g: 8px;
+    /* the gap */
+    --l: 5px;
+    /* line thickness*/
+    --s: 30px;
+    /* thumb size*/
+
+    width: 400px;
+    height: var(--s);
+    /* needed for Firefox*/
+    --_c: color-mix(in srgb, var(--c), #000 var(--p, 0%));
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    background: none;
+    cursor: pointer;
+    overflow: hidden;
+}
+
+input.slider:focus-visible,
+input.slider:hover {
+    --p: 25%;
+}
+
+input.slider:active,
+input.slider:focus-visible {
+    --_b: var(--s)
+}
+
+/* chromium */
+input.slider::-webkit-slider-thumb {
+    height: var(--s);
+    aspect-ratio: 1;
+    border-radius: 50%;
+    box-shadow: 0 0 0 var(--_b, var(--l)) inset var(--_c);
+    border-image: linear-gradient(90deg, var(--_c) 50%, #ababab 0) 0 1/calc(50% - var(--l)/2) 100vw/0 calc(100vw + var(--g));
+    -webkit-appearance: none;
+    appearance: none;
+    transition: .3s;
+}
+
+/* Firefox */
+input.slider::-moz-range-thumb {
+    height: var(--s);
+    width: var(--s);
+    background: none;
+    border-radius: 50%;
+    box-shadow: 0 0 0 var(--_b, var(--l)) inset var(--_c);
+    border-image: linear-gradient(90deg, var(--_c) 50%, #ababab 0) 0 1/calc(50% - var(--l)/2) 100vw/0 calc(100vw + var(--g));
+    -moz-appearance: none;
+    appearance: none;
+    transition: .3s;
+}
+
+@supports not (color: color-mix(in srgb, red, red)) {
+    input {
+        --_c: var(--c);
+    }
+}
