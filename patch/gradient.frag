@@ -28,6 +28,11 @@ vec4 compute_gradient(
     vec2 g = vec2(right - left, bottom - top);
     float mag = length(g);
     float theta = atan(g.y, g.x);
+    const float pi = 3.14159265359;
+    if(theta < 0.0){
+        theta += 2.0 * pi;
+    }
+    theta = clamp(theta / (2.0 * pi), 0.0, 1.0);
     return vec4(mag, theta, 0, 1.0);
 }
 

@@ -71,7 +71,6 @@
             noStroke();
 
             gradientBuffer = createFramebuffer({
-                "format": FLOAT,
                 "width": patchSize,
                 "height": patchSize,
                 "textureFiltering": NEAREST,
@@ -132,12 +131,9 @@
                 const x = (i % scan) / depth;
                 const y = Math.floor(i / scan);
                 const weight = Math.exp(weightFactor * ((x - center) ** 2 + (y - center) ** 2));
-                const mag = gradientBuffer.pixels[i];
-                const rad = gradientBuffer.pixels[i+1];
-                let deg = rad * 180 / Math.PI;
-                if(deg < 0){
-                    deg += 360;
-                }
+                const mag = gradientBuffer.pixels[i] / 255.0;
+                const rad = gradientBuffer.pixels[i+1] / 255.0;
+                const deg = rad * 360;
 
                 const bin = Math.floor(deg / 10);
                 if(rawHistogram[bin] === undefined){
@@ -146,17 +142,6 @@
 
                 rawHistogram[bin] += Number(weight * mag);
             }
-
-            const debug = document.getElementById('debug');
-            debugHistogram = [];
-            for(let i=0; i<36; i++){
-                let v = rawHistogram[i];
-                if(v === undefined){
-                    v = 0.0;
-                }
-                debugHistogram.push(v.toFixed(2));
-            }
-            debug.innerHTML = debugHistogram.toString();
             
             let histogram = Array(36);
             let orientationMax = 0;

@@ -336,7 +336,7 @@
                 loadPixels();
                 updatePixels();
                 noFill();
-                strokeWeight(2);
+                strokeWeight(2 * d);
                 for (let i = 0; i < features.length; i++) {
                     const f = features[i];
                     const level = f[3];
@@ -351,7 +351,7 @@
                     } else if (level == 4) {
                         stroke(255, 0, 0);
                     }
-                    circle(f[0], f[1], 2 * f[2] * d);
+                    circle(f[0], f[1], 2 * f[2]);
                 }
             }
         }
