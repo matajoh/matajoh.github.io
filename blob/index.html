@@ -251,18 +251,22 @@
             let totalPixels = 0;
             let numFeatures = 0;
             let check_sum = 0;
+            let theta_sum = 0;
             let threshold = document.getElementById('threshold').value;
             threshold = threshold * 0.001;
             extremaShader.setUniform("uThreshold", threshold);
             for (let level = 0; level < numLevels; level++) {
                 const dogBuffer = dogBuffers[level];
+                const pyramidBuffer = pyramidBuffers0[level];
                 const levelBuffer = extremaBuffers[level];
                 const levelWidth = levelBuffer.width;
                 const levelHeight = levelBuffer.height;
                 const halfLevelWidth = levelWidth / 2;
 
-                extremaShader.setUniform("uSampler", dogBuffer);
-                extremaShader.setUniform("uResolution", [dogBuffer.width, dogBuffer.height]);
+                extremaShader.setUniform("uDoG", dogBuffer);
+                extremaShader.setUniform("uDoGSize", [dogBuffer.width, dogBuffer.height]);
+                extremaShader.setUniform("uPyramid", pyramidBuffer);
+                extremaShader.setUniform("uPyramidSize", [pyramidBuffer.width, pyramidBuffer.height]);
 
                 levelBuffer.begin();
                 rect(0, 0, levelWidth, levelHeight);
@@ -285,6 +289,9 @@
                     }
 
                     const check = levelBuffer.pixels[i];
+                    let theta = Math.floor(levelBuffer.pixels[i + 1] / 7) * 10.0;
+                    theta_sum += theta;
+                    theta = theta * Math.PI / 180.0;
                     check_sum += check;
 
                     if (check < 0.5) {
@@ -296,12 +303,12 @@
                     numFeatures++;
                     const scale = Math.pow(2, level);
 
-                    features.push([x * scale - halfWidth, y * scale - halfHeight, sigmas[s] * scale, level]);
+                    features.push([x * scale - halfWidth, y * scale - halfHeight, sigmas[s] * scale, level, theta]);
                 }
             }
 
             const debug = document.getElementById('debug');
-            debug.innerHTML = `Features: ${numFeatures}`;
+            debug.innerHTML = `Features: ${numFeatures} Theta: ${theta_sum}`;
 
             let mode = document.getElementById('mode').value;
             shader(blobShader);
@@ -352,6 +359,12 @@
                         stroke(255, 0, 0);
                     }
                     circle(f[0], f[1], 2 * f[2]);
+
+                    if(level > 0){
+                        const dx = f[2] * Math.cos(f[4]);
+                        const dy = f[2] * Math.sin(f[4]);
+                        line(f[0], f[1], f[0] + dx, f[1] + dy);
+                    }
                 }
             }
         }
