@@ -249,9 +249,6 @@
             sigmas = [2.2627416997969525, 3.2]
             features = [];
             let totalPixels = 0;
-            let numFeatures = 0;
-            let check_sum = 0;
-            let theta_sum = 0;
             let threshold = document.getElementById('threshold').value;
             threshold = threshold * 0.001;
             extremaShader.setUniform("uThreshold", threshold);
@@ -289,26 +286,18 @@
                     }
 
                     const check = levelBuffer.pixels[i];
-                    let theta = Math.floor(levelBuffer.pixels[i + 1] / 7) * 10.0;
-                    theta_sum += theta;
+                    let theta = Math.floor(levelBuffer.pixels[i + 1] / 15) * 22.5;
                     theta = theta * Math.PI / 180.0;
-                    check_sum += check;
 
                     if (check < 0.5) {
                         continue;
                     }
 
                     const s = abs_x > halfLevelWidth ? 1 : 0;
-
-                    numFeatures++;
                     const scale = Math.pow(2, level);
-
                     features.push([x * scale - halfWidth, y * scale - halfHeight, sigmas[s] * scale, level, theta]);
                 }
             }
-
-            const debug = document.getElementById('debug');
-            debug.innerHTML = `Features: ${numFeatures} Theta: ${theta_sum}`;
 
             let mode = document.getElementById('mode').value;
             shader(blobShader);
