@@ -33,16 +33,19 @@
 
     <script>
 
+        let blurShader;
         let gradientShader;
         let patchShader;
+        let blurBuffer0;
+        let blurBuffer1;
         let gradientBuffer;
         let histogramBuffer;
-        const patchSize = 256;
+        const patchSize = 64;
         const histSize = 150;
 
         let cam;
-        let cameraWidth = 640;
-        let cameraHeight = 480;
+        let cameraWidth = 320;
+        let cameraHeight = 240;
         let canvasWidth;
         let canvasHeight;
 
@@ -51,6 +54,7 @@
         }
 
         function preload() {
+            blurShader = loadShader('blur.vert', 'blur.frag');
             gradientShader = loadShader('gradient.vert', 'gradient.frag');
             patchShader = loadShader('patch.vert', 'patch.frag');
         }
@@ -59,8 +63,8 @@
             const isPortrait = window.matchMedia('(orientation: portrait)').matches;
 
             if (isPortrait) {
-                cameraWidth = 480;
-                cameraHeight = 640;
+                cameraWidth = 320;
+                cameraHeight = 240;
             }
 
             let canvasWidth = cameraWidth + cameraHeight;
@@ -69,6 +73,20 @@
             canvas = document.getElementById('canvas');
             createCanvas(canvasWidth, canvasHeight, WEBGL, canvas);
             noStroke();
+
+            blurBuffer0 = createFramebuffer({
+                "width": cameraWidth,
+                "height": cameraHeight,
+                "textureFiltering": LINEAR,
+                "density": 1
+            });
+
+            blurBuffer1 = createFramebuffer({
+                "width": cameraWidth,
+                "height": cameraHeight,
+                "textureFiltering": LINEAR,
+                "density": 1
+            });
 
             gradientBuffer = createFramebuffer({
                 "width": patchSize,
@@ -106,9 +124,27 @@
                 flipped = !flipped;
             }
 
+            shader(blurShader);
+
+            blurShader.setUniform('uSampler', cam);
+            blurShader.setUniform('uResolution', [cameraWidth, cameraHeight]);
+            blurShader.setUniform('uFlipped', flipped);
+            blurShader.setUniform('uPass', 0);
+
+            blurBuffer0.begin();
+            rect(0, 0, cameraWidth, cameraHeight);
+            blurBuffer0.end();
+
+            blurShader.setUniform('uSampler', blurBuffer0);
+            blurShader.setUniform('uPass', 1);
+
+            blurBuffer1.begin();
+            rect(0, 0, cameraWidth, cameraHeight);
+            blurBuffer1.end();            
+
             shader(gradientShader);
 
-            gradientShader.setUniform('uSampler', cam);
+            gradientShader.setUniform('uSampler', blurBuffer1);
             gradientShader.setUniform('uResolution', [cameraWidth, cameraHeight]);
             gradientShader.setUniform('uPatchSize', [patchSize, patchSize]);
             gradientShader.setUniform('uFlipped', flipped);
@@ -125,15 +161,22 @@
             const sigma = patchSize / 6;
             const center = patchSize / 2;
             const weightFactor = -0.5 / (sigma ** 2);
+            let gradMax = 0;
             let rawHistogram = Array(36);
 
             for(let i=0; i<num_pixels; i += depth){
                 const x = (i % scan) / depth;
                 const y = Math.floor(i / scan);
                 const weight = Math.exp(weightFactor * ((x - center) ** 2 + (y - center) ** 2));
-                const mag = gradientBuffer.pixels[i] / 255.0;
-                const rad = gradientBuffer.pixels[i+1] / 255.0;
+                const mag0 = gradientBuffer.pixels[i];
+                const mag1 = gradientBuffer.pixels[i+1];
+                const mag =  (mag0 * 256.0 + mag1) / 65535.0;
+                const rad = gradientBuffer.pixels[i+2] / 255.0;
                 const deg = rad * 360;
+
+                if(mag > gradMax){
+                    gradMax = mag;
+                }
 
                 const bin = Math.floor(deg / 10);
                 if(rawHistogram[bin] === undefined){
@@ -142,7 +185,7 @@
 
                 rawHistogram[bin] += Number(weight * mag);
             }
-            
+          
             let histogram = Array(36);
             let orientationMax = 0;
             let dominiantOrientation = 0;
@@ -157,10 +200,6 @@
                 }
             }
 
-            for(let i=0; i<36; i++){
-                histogram[i] = histogram[i] / orientationMax;
-            }
-
             shader(patchShader);
 
             patchShader.setUniform('uFlipped', flipped);            
@@ -170,6 +209,7 @@
             patchShader.setUniform('uPatchSize', [patchSize, patchSize]);
             patchShader.setUniform('uHistogramSize', histSize);
             patchShader.setUniform('uOrientation', dominiantOrientation);
+            patchShader.setUniform('uGradMax', gradMax);
             patchShader.setUniform('uH0', [histogram[0], histogram[1], histogram[2], histogram[3]]);
             patchShader.setUniform('uH1', [histogram[4], histogram[5], histogram[6], histogram[7]]);
             patchShader.setUniform('uH2', [histogram[8], histogram[9], histogram[10], histogram[11]]);

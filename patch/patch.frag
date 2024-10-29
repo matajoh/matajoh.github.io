@@ -16,36 +16,12 @@ uniform vec4 uH6;
 uniform vec4 uH7;
 uniform vec4 uH8;
 uniform int uOrientation;
+uniform float uGradMax;
 
 varying vec2 vTexCoord;
 
 float grayscale(vec4 color) {
   return 0.2989 * color.r + 0.5870 * color.g + 0.1140 * color.b;
-}
-
-vec4 maskedPatch(vec2 uv)
-{
-  vec2 patchResolution = uPatchSize / uResolution;
-  vec2 tl = (1.0 - patchResolution) * 0.5;
-  vec2 br = tl + patchResolution;
-  if(uv.x < tl.x || uv.x > br.x || uv.y < tl.y || uv.y > br.y){
-    float gray = 0.25 * grayscale(texture2D(uCam, uv));
-    return vec4(vec3(gray), 1.0);
-  }
-
-  return texture2D(uCam, uv);
-}
-
-vec4 rotatedPatch(vec2 uv)
-{
-  const float pi = 3.14159265359;
-  vec2 patchResolution = uPatchSize / uResolution;
-  float angle = float(uOrientation) * 10.0 * pi / 180.0;
-  vec2 center = vec2(0.5, 0.5);
-  vec2 offset = (uv - center) * patchResolution;
-  uv.x = center.x + offset.x * cos(angle) - offset.y * sin(angle);
-  uv.y = center.y + offset.x * sin(angle) + offset.y * cos(angle);
-  return texture2D(uCam, uv);
 }
 
 float histValue(int bin)
@@ -167,6 +143,80 @@ float histValue(int bin)
   return 0.0;
 }
 
+const float pi = 3.14159265359;
+
+float interpolateOrientation()
+{
+  float peak_index = float(uOrientation);
+  float peak_value = histValue(uOrientation);
+  float left_value = histValue(uOrientation - 1);
+  float right_value = histValue(uOrientation + 1);
+  float interpolated_peak_index = (peak_index + 0.5 * (left_value - right_value) / (left_value - 2.0 * peak_value + right_value));
+  if(interpolated_peak_index > 36.0){
+    interpolated_peak_index -= 36.0;
+  }
+
+  float orientation = interpolated_peak_index * 10.0;
+
+  if(abs(orientation - 360.) < 1e-7)
+  {
+    orientation = 0.0;
+  }
+
+  return orientation * pi / 180.0;
+}
+
+vec4 maskedPatch(vec2 uv, float angle)
+{
+  vec2 patchResolution = uPatchSize / uResolution;
+  vec2 tl = (1.0 - patchResolution) * 0.5;
+  vec2 br = tl + patchResolution;
+  if(uv.x < tl.x || uv.x > br.x || uv.y < tl.y || uv.y > br.y){
+    float gray = 0.25 * grayscale(texture2D(uCam, uv));
+    return vec4(vec3(gray), 1.0);
+  }
+
+  float dx = (uv.x - 0.5) / patchResolution.x;
+  float dy = (uv.y - 0.5) / patchResolution.y;
+  float radius = sqrt(dx * dx + dy * dy);
+  float dr = radius - 0.5;
+  float circle_weight = exp(-0.5 * dr * dr / (0.02 * 0.02));
+
+  float da = atan(dy, dx) - angle;
+  if(da < -pi){
+    da += 2.0 * pi;
+  }else if(da > pi){
+    da -= 2.0 * pi;
+  }
+
+  float line_weight = exp(-0.5 * da * da / (0.1 * 0.1));
+  if(dr > 0.){
+    line_weight = 0.0;
+  }
+  
+  vec4 color = texture2D(uCam, uv);
+  vec4 stroke = vec4(vec3(1.0, 0.0, 0.0), 1.0);
+
+  return clamp((1.0 - circle_weight - line_weight) * color + circle_weight * stroke + line_weight * stroke, 0.0, 1.0);
+}
+
+float unpack(vec2 color)
+{
+  float x = color.x * 65280.0;
+  float y = color.y * 255.0;
+  return clamp(float(x + y) / 65535.0, 0.0, 1.0);
+}
+
+vec4 rotatedPatch(vec2 uv, float angle)
+{
+  vec2 patchResolution = uPatchSize / uResolution;  
+  vec2 center = vec2(0.5, 0.5);
+  vec2 offset = (uv - center) * patchResolution;
+  vec2 cam_uv = vec2(center.x + offset.x * cos(angle) - offset.y * sin(angle),
+                     center.y + offset.x * sin(angle) + offset.y * cos(angle));
+  return texture2D(uCam, cam_uv);
+}
+
 void main() {
   vec2 uv = vTexCoord;
 
@@ -180,6 +230,7 @@ void main() {
   if(uv.y < v_div){
     uv.y = uv.y / v_div;
     float h_div = uResolution.x / width;
+    float orientation = interpolateOrientation();
 
     if(uv.x < h_div){
       uv.x = (uv.x / h_div);
@@ -187,24 +238,24 @@ void main() {
         uv.x = 1.0 - uv.x;
       }
 
-      gl_FragColor = maskedPatch(uv);
+      gl_FragColor = maskedPatch(uv, orientation);
     }else{
       uv.x = (uv.x - h_div) * 2.0;
       if(uFlipped){
         uv.x = 1.0 - uv.x;
       }
 
-      gl_FragColor = rotatedPatch(uv);
+      gl_FragColor = rotatedPatch(uv, orientation);
     }
   }else{
     uv.y = uv.y - v_div;
     int bin = int(uv.x * 36.0);
     float value = histValue(bin);
-    float binDiv = (1.0 - v_div) * (1.0 - value);
+    float maxPeak = histValue(uOrientation);
+    float binDiv = (1.0 - v_div) * (1.0 - (value / maxPeak));
     if(uv.y < binDiv){
       gl_FragColor = vec4(vec3(1.0), 1.0);
     }else{
-      float maxPeak = histValue(uOrientation);
       float lhs = histValue(bin - 1);
       float rhs = histValue(bin + 1);
       if(bin == uOrientation){
