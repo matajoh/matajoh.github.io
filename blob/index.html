@@ -247,10 +247,9 @@
             // and the features are detected from
             // the middle two images.
             sigmas = [2.2627416997969525, 3.2]
-            features = [];
+            featuresByLevel = [];
             let totalPixels = 0;
             let numFeatures = 0;
-            let check_sum = 0;
             let threshold = document.getElementById('threshold').value;
             threshold = threshold * 0.001;
             extremaShader.setUniform("uThreshold", threshold);
@@ -275,34 +274,41 @@
                 const halfWidth = cameraWidth / 2;
                 const halfHeight = cameraHeight / 2;
                 totalPixels += num_pixels / 4;
+                features = [];
                 for (let i = 0; i < num_pixels; i += depth) {
                     const abs_x = (i % scan) / depth;
-                    let y = Math.floor(i / scan);
-                    let x = abs_x % halfLevelWidth;
+                    let y = Math.floor(i / scan) + 0.5;
+                    let x = abs_x % halfLevelWidth + 0.5;
 
                     if (x < 3 || y < 3 || x >= halfLevelWidth - 3 || y >= levelHeight - 3) {
                         continue;
                     }
 
-                    const check = levelBuffer.pixels[i];
-                    check_sum += check;
+                    const dx = (levelBuffer.pixels[i] * levelWidth) / 255.0;
+                    const dy = (levelBuffer.pixels[i+1] * levelHeight) / 255.0;
+                    const check = levelBuffer.pixels[i+2] / 255.0;
 
                     if (check < 0.5) {
                         continue;
                     }
 
-                    const s = abs_x > halfLevelWidth ? 1 : 0;
+                    x += dx;
+                    y += dy;
+                    if(x < 0 || x >= halfLevelWidth || y < 0 || y >= levelHeight) {
+                        continue;
+                    }
 
+                    const s = abs_x > halfLevelWidth ? 1 : 0;
                     numFeatures++;
                     const scale = Math.pow(2, level);
-
-                    features.push([x * scale - halfWidth, y * scale - halfHeight, sigmas[s] * scale, level]);
+                    features.push([x * scale - halfWidth, y * scale - halfHeight, sigmas[s] * scale]);
                 }
+
+                featuresByLevel.push(features);
             }
 
             const debug = document.getElementById('debug');
             debug.innerHTML = `Features: ${numFeatures}`;
-
             let mode = document.getElementById('mode').value;
             shader(blobShader);
             blobShader.setUniform('uMode', mode);
@@ -337,9 +343,8 @@
                 updatePixels();
                 noFill();
                 strokeWeight(2 * d);
-                for (let i = 0; i < features.length; i++) {
-                    const f = features[i];
-                    const level = f[3];
+                for(let level = 0; level < numLevels; level++) {
+                    const features = featuresByLevel[level];
                     if (level == 0) {
                         stroke(255, 0, 255);
                     } else if (level == 1) {
@@ -351,7 +356,10 @@
                     } else if (level == 4) {
                         stroke(255, 0, 0);
                     }
-                    circle(f[0], f[1], 2 * f[2]);
+                    for (let i = 0; i < features.length; i++) {
+                        const f = features[i];
+                        circle(f[0], f[1], 3 * f[2]);
+                    }
                 }
             }
         }

@@ -85,7 +85,7 @@ vec4 getScaleSpaceColor(vec2 uv){
 
 vec4 getDoGColor(vec2 uv){
   float dog = unpack(getPyramidColor(uv, 0.8, uDoG0, uDoG1, uDoG2, uDoG3, uDoG4));
-  dog = clamp((dog - 0.5) * 2.0 + 0.5, 0.0, 1.0);
+  dog = clamp((dog - 0.5) * 4.0 + 0.5, 0.0, 1.0);
   return vec4(vec3(dog), 1.0);
 }
 
