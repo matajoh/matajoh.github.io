@@ -71,7 +71,10 @@
         let canvasWidth;
         let canvasHeight;
         let debugImg;
+        let font;
         const numLevels = 5;
+
+        const sigmas = [1.6, 2.26, 3.2, 4.53, 6.4];
 
         if (location.protocol !== 'https:') {
             document.getElementById('https').style.display = 'block';
@@ -93,6 +96,8 @@
             }
 
             debugImg = loadImage('polkadots.png');
+
+            font = loadFont('./RobotoMono-Regular.ttf');
 
             bufferWidth = cameraWidth * 5;
             bufferHeight = cameraHeight;
@@ -246,7 +251,6 @@
             // 1.6, 2.26, 3.2, 4.5
             // and the features are detected from
             // the middle two images.
-            sigmas = [2.2627416997969525, 3.2]
             featuresByLevel = [];
             let totalPixels = 0;
             let numFeatures = 0;
@@ -301,7 +305,7 @@
                     const s = abs_x > halfLevelWidth ? 1 : 0;
                     numFeatures++;
                     const scale = Math.pow(2, level);
-                    features.push([x * scale - halfWidth, y * scale - halfHeight, sigmas[s] * scale]);
+                    features.push([x * scale - halfWidth, y * scale - halfHeight, sigmas[s + 1] * scale]);
                 }
 
                 featuresByLevel.push(features);
@@ -360,6 +364,35 @@
                         const f = features[i];
                         circle(f[0], f[1], 3 * f[2]);
                     }
+                }
+            }else if(mode == 1){
+                resetShader();
+                const d = pixelDensity();
+                loadPixels();
+                updatePixels();
+                fill('yellow');
+                stroke('black');
+                strokeWeight(2 * d);
+                textFont(font);
+                textAlign(CENTER, CENTER);
+                let centerX = canvasWidth / 2;
+                let centerY = canvasHeight / 2;
+                let y = -centerY;
+                for(let level = 0; level < numLevels; level++){
+                    const fontSize = 32 * Math.pow(0.5, level);
+                    const levelWidth = canvasWidth * Math.pow(0.5, level);
+                    const imageWidth = levelWidth / 5;
+                    const imageHeight = cameraHeight * imageWidth / cameraWidth;
+                    let x = (canvasWidth - levelWidth) / 2 + imageWidth / 2 - centerX;
+                    let yy = y + imageHeight - fontSize * 1.5; 
+
+                    textSize(fontSize);
+                    for(let i=0; i<sigmas.length; i++){
+                        text((sigmas[i] * Math.pow(2, level)).toFixed(2), x, yy);
+                        x += imageWidth;
+                    }
+
+                    y += imageHeight;
                 }
             }
         }
